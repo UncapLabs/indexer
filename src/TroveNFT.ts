@@ -1,21 +1,28 @@
 import { starknet } from '@snapshot-labs/checkpoint';
 import { Context } from './index';
-import { Trove } from '../.checkpoint/models';
-import { updateBorrowerTrovesCount, BorrowerTrovesCountUpdate } from './shared';
+import { Trove, TroveManagerEventsEmitter } from '../.checkpoint/models';
+import { updateBorrowerTrovesCount, BorrowerTrovesCountUpdate, toHexAddress } from './shared';
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000000000000000000000000000';
+const ZERO_ADDRESS = toHexAddress('0');
 
 export function createTransferHandler(ctx: Context): starknet.Writer {
-  return async ({ event }) => {
+  return async ({ event, rawEvent }) => {
+    console.log('SCOTT NFT event', event);
     // Minting doesn’t need to be handled as we are already
     // handling OP_OPEN_TROVE & OP_OPEN_TROVE_AND_JOIN_BATCH
     // in TroveManager.mapping.ts.
-    if (event.from == ZERO_ADDRESS) {
+    const fromAddress = toHexAddress(event.from);
+    const toAddress = toHexAddress(event.to);
+    const eventEmitter = toHexAddress(rawEvent.from_address);
+    if (fromAddress == ZERO_ADDRESS) {
       return;
     }
 
-    const collId = '0';
-    //   let collId = dataSource.context().getString('collId'); TODO: get from context
+    const troveManagerEventsEmitter = await TroveManagerEventsEmitter.loadEntity(
+      eventEmitter,
+      ctx.indexerName
+    );
+    const collId = troveManagerEventsEmitter.collId;
     const troveFullId = `${collId}:${event.token_id}`;
 
     const trove = await Trove.loadEntity(troveFullId, ctx.indexerName);
@@ -23,21 +30,24 @@ export function createTransferHandler(ctx: Context): starknet.Writer {
       throw new Error(`Trove does not exist: ${troveFullId}`);
     }
 
-    const collIndex = Number(trove.collateral);
-
     // update troves count & ownerIndex for the previous owner
     updateBorrowerTrovesCount(
       BorrowerTrovesCountUpdate.remove,
-      event.from,
-      collIndex,
+      fromAddress,
+      Number(collId),
       ctx.indexerName
     );
 
     // update troves count & ownerIndex for the current owner (including zero address)
-    updateBorrowerTrovesCount(BorrowerTrovesCountUpdate.add, event.to, collIndex, ctx.indexerName);
+    updateBorrowerTrovesCount(
+      BorrowerTrovesCountUpdate.add,
+      toAddress,
+      Number(collId),
+      ctx.indexerName
+    );
 
     // update the trove borrower
-    trove.borrower = event.to;
+    trove.borrower = toAddress;
     await trove.save();
   };
 }

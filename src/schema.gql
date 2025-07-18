@@ -1,13 +1,5 @@
 scalar BigDecimalU256
 
-# TODO find a way to add enum
-# enum TroveStatus {
-#   active
-#   closed
-#   liquidated
-#   redeemed
-# }
-
 type BorrowerInfo {
   id: ID! # "borrowerAddress", e.g. "0x0000000000000000000000000000000000000000"
   nextOwnerIndexes: [Int!]!
@@ -27,6 +19,8 @@ type CollateralAddresses {
   id: ID! # "collIndex", e.g. "0"
   collateral: Collateral!
   borrowerOperations: String!
+  liquidationManager: String!
+  redemptionManager: String!
   sortedTroves: String!
   stabilityPool: String!
   token: String!
@@ -54,7 +48,7 @@ type InterestBatch {
 }
 
 type Trove {
-  id: ID! # "collIndex:collId", e.g. 0:0x1731afc858cad2708001a4f71851f9f775729c22f47df7c4360b1e416fd0f2de
+  id: ID! # "collIndex:TroveNFTId", e.g. 0:0x1731afc858cad2708001a4f71851f9f775729c22f47df7c4360b1e416fd0f2de
   borrower: String!
   collateral: Collateral!
   closedAt: Int
@@ -68,4 +62,9 @@ type Trove {
   interestRate: BigDecimalU256!
   stake: BigDecimalU256!
   troveId: String!
+}
+
+type TroveManagerEventsEmitter {
+  id: ID! # "TroveManagerEventsEmitterAddress"
+  collId: String!
 }

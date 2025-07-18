@@ -14,13 +14,13 @@ export async function updateBorrowerTrovesCount(
   const borrowerId = borrower;
   let borrowerInfo = await BorrowerInfo.loadEntity(borrowerId, indexerName);
 
-  const collateralsCount = 1; // TODO: dataSource.context().getI32('totalCollaterals');
+  const maxCollateralsCount = 10;
 
   if (!borrowerInfo) {
     borrowerInfo = new BorrowerInfo(borrowerId, indexerName);
     borrowerInfo.troves = 0;
-    borrowerInfo.trovesByCollateral = new Array<number>(collateralsCount).fill(0);
-    borrowerInfo.nextOwnerIndexes = new Array<number>(collateralsCount).fill(0);
+    borrowerInfo.trovesByCollateral = new Array<number>(maxCollateralsCount).fill(0);
+    borrowerInfo.nextOwnerIndexes = new Array<number>(maxCollateralsCount).fill(0);
   }
 
   // track the amount of troves per collateral

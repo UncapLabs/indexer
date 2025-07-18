@@ -1,5 +1,5 @@
 import { CheckpointConfig } from '@snapshot-labs/checkpoint';
-import TroveMangager from './abis/TroveManager.json';
+import TroveManager from './abis/TroveManager.json';
 import CollateralRegistry from './abis/CollateralRegistry.json';
 import BorrowerOperations from './abis/BorrowerOperations.json';
 import TroveManagerEventsEmitter from './abis/TroveManagerEventsEmitter.json';
@@ -32,21 +32,22 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
             fn: 'handleCollateralRegistryAddressChanged'
           }
         ]
-      },
-      {
-        contract: '0x00d98cf01b5bea47490702ced60943cce619599dba09cf3aeae6993c4f1b2ef2',
-        start: 1060055,
-        abi: 'TroveManagerEventsEmitter',
-        events: [
-          {
-            name: 'TroveOperation',
-            fn: 'handleTroveOperation'
-          }
-        ]
       }
+      // {
+      //   contract: '0x00d98cf01b5bea47490702ced60943cce619599dba09cf3aeae6993c4f1b2ef2',
+      //   start: 1060055,
+      //   abi: 'TroveManagerEventsEmitter',
+      //   events: [
+      //     {
+      //       name: 'TroveOperation',
+      //       fn: 'handleTroveOperation'
+      //     }
+      //   ]
+      // }
     ],
     templates: {
       TroveManagerEventsEmitter: {
+        abi: 'TroveManagerEventsEmitter',
         events: [
           {
             name: 'TroveOperation',
@@ -59,6 +60,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
         ]
       },
       TroveNFT: {
+        abi: 'TroveNFT',
         events: [
           {
             name: 'Transfer',
@@ -70,7 +72,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     abis: {
       BorrowerOperations,
       CollateralRegistry,
-      TroveMangager,
+      TroveManager,
       TroveManagerEventsEmitter,
       TroveNFT,
       USDU

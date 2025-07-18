@@ -1,7 +1,7 @@
 {
   "decimal_types": {
     "BigDecimalU256": {
-      "p": 60,
+      "p": 78,
       "d": 0
     }
   }
