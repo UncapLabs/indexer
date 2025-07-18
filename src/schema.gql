@@ -1,0 +1,71 @@
+scalar BigInt
+
+# TODO find a way to add enum
+# enum TroveStatus {
+#   active
+#   closed
+#   liquidated
+#   redeemed
+# }
+
+type BorrowerInfo {
+  id: ID! # "borrowerAddress", e.g. "0x0000000000000000000000000000000000000000"
+  nextOwnerIndexes: [Int!]!
+  troves: Int!
+  trovesByCollateral: [Int!]!
+}
+
+type Collateral {
+  id: ID! # "collIndex", e.g. "0"
+  collIndex: Int!
+  minCollRatio: BigInt!
+  troves: [Trove!]! @derivedFrom(field: "collateral")
+  addresses: CollateralAddresses! @derivedFrom(field: "collateral")
+}
+
+type CollateralAddresses {
+  id: ID! # "collIndex", e.g. "0"
+  collateral: Collateral!
+  borrowerOperations: String!
+  sortedTroves: String!
+  stabilityPool: String!
+  token: String!
+  troveManagerEventsEmitter: String!
+  troveManager: String!
+  troveNft: String!
+}
+
+type InterestRateBracket {
+  id: ID! # "collIndex:rateFloored", e.g. "0:44000000000000000"
+  collateral: Collateral!
+  rate: BigInt!
+  totalDebt: BigInt!
+}
+
+type InterestBatch {
+  id: ID! # "collIndex:batchManager", e.g. "0:0x0000000000000000000000000000000000000000"
+  collateral: Collateral!
+  batchManager: String!
+  debt: BigInt!
+  coll: BigInt!
+  annualInterestRate: BigInt!
+  annualManagementFee: BigInt!
+  troves: [Trove!]! @derivedFrom(field: "interestBatch")
+}
+
+type Trove {
+  id: ID! # "collIndex:collId", e.g. 0:0x1731afc858cad2708001a4f71851f9f775729c22f47df7c4360b1e416fd0f2de
+  borrower: String!
+  collateral: Collateral!
+  closedAt: Int
+  createdAt: Int!
+  mightBeLeveraged: Boolean!
+  status: String! #TroveStatus
+  updatedAt: Int!
+  debt: BigInt!
+  deposit: BigInt!
+  interestBatch: InterestBatch
+  interestRate: BigInt!
+  stake: BigInt!
+  troveId: String!
+}
