@@ -50,5 +50,7 @@ export function toHexAddress(address: string | bigint | number): string {
   } else {
     addy = address;
   }
-  return `0x${addy.toString(16)}`; // TODO: padding required
+  const hexString = addy.toString(16);
+  const paddedHex = hexString.padStart(64, '0');
+  return `0x${paddedHex}`;
 }

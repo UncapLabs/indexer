@@ -13,7 +13,6 @@ const ZERO_ADDRESS = '0x00000000000000000000000000000000000000000000000000000000
 
 export function createCollateralRegistryAddressChangedHandler(ctx: Context): starknet.Writer {
   return async ({ block, event, helpers }) => {
-    console.log('SCOTT event', event);
     const registry = new Contract(
       CollateralRegistryAbi,
       event.new_collateral_registry,
@@ -37,7 +36,7 @@ export function createCollateralRegistryAddressChangedHandler(ctx: Context): sta
       // we use the token address as the id for the collateral
       const coll = await Collateral.loadEntity(tokenAddress, ctx.indexerName);
       if (!coll) {
-        addCollateral(
+        await addCollateral(
           helpers,
           block,
           index,
@@ -70,7 +69,6 @@ async function addCollateral(
 
   const troveManagerContract = new Contract(TroveManagerAbi, troveManagerAddress, ctx.provider);
 
-  console.log('SCOTT collId', collId);
   const addresses = new CollateralAddresses(collId, ctx.indexerName);
   addresses.collateral = collId;
   addresses.borrowerOperations = toHexAddress(await troveManagerContract.get_borrower_operations());
@@ -92,7 +90,6 @@ async function addCollateral(
   await addresses.save();
 
   const toto = await Collateral.loadEntity(collId, ctx.indexerName);
-  console.log(`\nSCOTT ${toto}\n`);
 
   // TODO: find a way to pass context
   //   let context = new DataSourceContext();

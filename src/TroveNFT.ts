@@ -7,7 +7,6 @@ const ZERO_ADDRESS = '0x00000000000000000000000000000000000000000000000000000000
 
 export function createTransferHandler(ctx: Context): starknet.Writer {
   return async ({ event }) => {
-    console.log('\n\nSCOTT event', event);
     // Minting doesn’t need to be handled as we are already
     // handling OP_OPEN_TROVE & OP_OPEN_TROVE_AND_JOIN_BATCH
     // in TroveManager.mapping.ts.

@@ -36,10 +36,6 @@ const FLASH_LOAN_TOPIC = 'TODO'; // TODO: should be the hash of the flash loan e
 
 export function createTroveOperationHandler(context: Context): starknet.Writer {
   return async ({ block, event }) => {
-    console.log('\n\nSCOTT block', context);
-    console.log('\n\nSCOTT event', event);
-    // Sleep for 5 seconds
-    // await new Promise(resolve => setTimeout(resolve, 5000));
     const operation: string = new CairoCustomEnum(event.operation.variant).activeVariant();
     if (!block || !event) return;
 
@@ -50,7 +46,6 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
     const troveId = event.trove_id;
     const collId = '0'; // TODO get from DataSource
     const collateral = await Collateral.loadEntity(collId, indexerName);
-    console.log(`\nSCOTT collateral ${collateral}\n`);
 
     if (!collateral) {
       throw new Error(`Collateral not found: ${collId}`);
@@ -173,7 +168,7 @@ async function createTrove(
   }
 
   const nftContract = new Contract(TroveNFTAbi, NFT_CONTRACT_ADDRESS, ctx.provider);
-  const borrower = await nftContract.owner_of(troveId);
+  const borrower = toHexAddress(await nftContract.owner_of(troveId));
 
   await updateBorrowerTrovesCount(
     BorrowerTrovesCountUpdate.add,
@@ -187,16 +182,16 @@ async function createTrove(
   trove.borrower = borrower;
   trove.collateral = collId;
   trove.createdAt = timestamp;
-  trove.debt = debt;
-  trove.deposit = deposit;
-  trove.stake = stake;
+  trove.debt = debt.toString();
+  trove.deposit = deposit.toString();
+  trove.stake = stake.toString();
   trove.status = 'active';
   trove.troveId = toHexAddress(troveId);
   trove.updatedAt = timestamp;
 
   // batches are handled separately, not
   // when creating the trove but right after
-  trove.interestRate = interestRate;
+  trove.interestRate = interestRate.toString();
   trove.interestBatch = null;
   trove.mightBeLeveraged = mightBeLeveraged;
 
@@ -223,8 +218,6 @@ async function updateTrove(
   const collId = '0'; // TODO find a way
   //   let collId = dataSource.context().getString('collId');
 
-  console.log(`\nSCOTT collId ${collId}\n`);
-  console.log(`\nSCOTT ctx.indexerName ${ctx.indexerName}\n`);
   const collateral = await Collateral.loadEntity(collId, ctx.indexerName);
   if (!collateral) {
     throw new Error(`Non-existent collateral: ${collId}`);
@@ -233,14 +226,14 @@ async function updateTrove(
   const troveFullId = `${collId}:${toHexAddress(troveId)}`;
   const trove = await Trove.loadEntity(troveFullId, ctx.indexerName);
 
-  const prevDebt = trove ? trove.debt : BigInt(0);
-  const prevInterestRate = trove ? trove.interestRate : null;
+  const prevDebt = trove ? BigInt(trove.debt) : BigInt(0);
+  const prevInterestRate = trove ? BigInt(trove.interestRate) : BigInt(0);
 
   const troveData = await troveManagerContract.get_latest_trove_data(troveId);
   const newDebt = troveData.entire_debt;
   const newDeposit = troveData.entire_coll;
   const newInterestRate = troveData.annual_interest_rate;
-  const newStake = await troveManagerContract.get_troves(troveId).stake;
+  const newStake = (await troveManagerContract.get_troves(troveId)).stake;
 
   await collateral.save();
 
@@ -277,9 +270,9 @@ async function updateTrove(
   if (trove.interestBatch === null) {
     await updateRateBracketDebt(
       collId,
-      prevInterestRate,
+      BigInt(prevInterestRate),
       newInterestRate,
-      prevDebt,
+      BigInt(prevDebt),
       newDebt,
       ctx.indexerName
     );
@@ -338,12 +331,12 @@ async function leaveBatch(
     BigInt(0), // coming from rate 0 (in batch)
     interestRate,
     BigInt(0), // debt was 0 too (in batch)
-    trove.debt,
+    BigInt(trove.debt),
     indexerName
   );
 
   trove.interestBatch = null;
-  trove.interestRate = interestRate;
+  trove.interestRate = interestRate.toString();
   trove.status = 'active'; // always reset the status when leaving a batch
   trove.updatedAt = timestamp;
   await trove.save();
@@ -377,6 +370,7 @@ async function updateRateBracketDebt(
   // add debt to new bracket
   const newRateBracket = await loadOrCreateInterestRateBracket(collId, newRateFloored, indexerName);
   newRateBracket.totalDebt = newRateBracket.totalDebt + newDebt;
+  // log all fields of newRateBracket
   await newRateBracket.save();
 }
 
@@ -391,8 +385,8 @@ async function loadOrCreateInterestRateBracket(
   if (!rateBracket) {
     rateBracket = new InterestRateBracket(rateBracketId, indexerName);
     rateBracket.collateral = collId;
-    rateBracket.rate = rateFloored;
-    rateBracket.totalDebt = BigInt(0);
+    rateBracket.rate = rateFloored.toString();
+    rateBracket.totalDebt = BigInt(0).toString();
   }
 
   return rateBracket;
@@ -428,15 +422,15 @@ async function enterBatch(
 
   await updateRateBracketDebt(
     collId,
-    trove.interestRate,
+    BigInt(trove.interestRate),
     BigInt(0), // moving rate to 0 (in batch)
-    trove.debt,
+    BigInt(trove.debt),
     BigInt(0), // debt is 0 too (handled at the batch level)
     indexerName
   );
 
   trove.interestBatch = batchId;
-  trove.interestRate = BigInt(0);
+  trove.interestRate = BigInt(0).toString();
   trove.updatedAt = timestamp;
   await trove.save();
 
@@ -464,7 +458,14 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
     const prevDebt = batch ? batch.debt : BigInt(0);
     const newDebt = event.debt;
 
-    await updateRateBracketDebt(collId, prevRate, newRate, prevDebt, newDebt, indexerName);
+    await updateRateBracketDebt(
+      collId,
+      BigInt(prevRate),
+      BigInt(newRate),
+      BigInt(prevDebt),
+      BigInt(newDebt),
+      indexerName
+    );
 
     // update batch
     if (!batch) {

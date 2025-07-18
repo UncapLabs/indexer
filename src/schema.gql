@@ -1,4 +1,4 @@
-scalar BigInt
+scalar BigDecimalU256
 
 # TODO find a way to add enum
 # enum TroveStatus {
@@ -18,7 +18,7 @@ type BorrowerInfo {
 type Collateral {
   id: ID! # "collIndex", e.g. "0"
   collIndex: Int!
-  minCollRatio: BigInt!
+  minCollRatio: BigDecimalU256!
   troves: [Trove!]! @derivedFrom(field: "collateral")
   addresses: CollateralAddresses! @derivedFrom(field: "collateral")
 }
@@ -38,18 +38,18 @@ type CollateralAddresses {
 type InterestRateBracket {
   id: ID! # "collIndex:rateFloored", e.g. "0:44000000000000000"
   collateral: Collateral!
-  rate: BigInt!
-  totalDebt: BigInt!
+  rate: BigDecimalU256!
+  totalDebt: BigDecimalU256!
 }
 
 type InterestBatch {
   id: ID! # "collIndex:batchManager", e.g. "0:0x0000000000000000000000000000000000000000"
   collateral: Collateral!
   batchManager: String!
-  debt: BigInt!
-  coll: BigInt!
-  annualInterestRate: BigInt!
-  annualManagementFee: BigInt!
+  debt: BigDecimalU256!
+  coll: BigDecimalU256!
+  annualInterestRate: BigDecimalU256!
+  annualManagementFee: BigDecimalU256!
   troves: [Trove!]! @derivedFrom(field: "interestBatch")
 }
 
@@ -62,10 +62,10 @@ type Trove {
   mightBeLeveraged: Boolean!
   status: String! #TroveStatus
   updatedAt: Int!
-  debt: BigInt!
-  deposit: BigInt!
+  debt: BigDecimalU256!
+  deposit: BigDecimalU256!
   interestBatch: InterestBatch
-  interestRate: BigInt!
-  stake: BigInt!
+  interestRate: BigDecimalU256!
+  stake: BigDecimalU256!
   troveId: String!
 }

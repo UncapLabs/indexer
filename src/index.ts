@@ -7,6 +7,7 @@ import Checkpoint, { starknet, LogLevel } from '@snapshot-labs/checkpoint';
 import { createConfig } from './config';
 import { createStarknetWriters } from './writers';
 import { RpcProvider } from 'starknet';
+import overrides from './overrides.json';
 
 export type Context = {
   indexerName: string;
@@ -46,7 +47,8 @@ const sepoliaIndexer = new starknet.StarknetIndexer(createStarknetWriters(contex
 const checkpoint = new Checkpoint(schema, {
   logLevel: LogLevel.Info,
   prettifyLogs: true,
-  dbConnection: getDatabaseConnection()
+  dbConnection: getDatabaseConnection(),
+  overridesConfig: overrides
 });
 
 // checkpoint.addIndexer('mainnet', mainnetConfig, mainnetIndexer);
