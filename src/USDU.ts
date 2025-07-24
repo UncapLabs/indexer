@@ -2,6 +2,7 @@ import { Context } from './index';
 import BorrowerOperationsAbi from './abis/BorrowerOperations.json';
 import CollateralRegistryAbi from './abis/CollateralRegistry.json';
 import TroveManagerAbi from './abis/TroveManager.json';
+import AddressesRegistryAbi from './abis/AddressesRegistry.json';
 import { Contract } from 'starknet';
 import { starknet } from '@snapshot-labs/checkpoint';
 import { Collateral, CollateralAddresses, TroveManagerEventsEmitter } from '../.checkpoint/models';
@@ -21,28 +22,22 @@ export function createCollateralRegistryAddressChangedHandler(ctx: Context): sta
     const totalCollaterals: number = await registry.get_total_collaterals();
 
     for (let index = 0; index < totalCollaterals; index++) {
-      const tokenAddress = toHexAddress(await registry.get_collateral(index));
-
+      const token = toHexAddress(await registry.get_collateral(index));
       const troveManagerAddress = toHexAddress(await registry.get_trove_manager(index));
-      const troveManager = new Contract(TroveManagerAbi, troveManagerAddress, ctx.provider);
-      const troveManagerEventsEmitterAddress = toHexAddress(
-        await troveManager.get_trove_manager_events_emitter()
-      );
 
-      if (tokenAddress === ZERO_ADDRESS || troveManagerAddress === ZERO_ADDRESS) {
+      if (token === ZERO_ADDRESS || troveManagerAddress === ZERO_ADDRESS) {
         break;
       }
 
       // we use the token address as the id for the collateral
-      const coll = await Collateral.loadEntity(tokenAddress, ctx.indexerName);
+      const coll = await Collateral.loadEntity(index.toString(), ctx.indexerName);
       if (!coll) {
         await addCollateral(
           helpers,
           block,
           index,
           totalCollaterals,
-          tokenAddress,
-          troveManagerEventsEmitterAddress,
+          token,
           troveManagerAddress,
           ctx
         );
@@ -57,7 +52,6 @@ async function addCollateral(
   collIndex: number,
   totalCollaterals: number,
   tokenAddress: string,
-  troveManagerEventsEmitterAddress: string,
   troveManagerAddress: string,
   ctx: Context
 ): Promise<void> {
@@ -67,18 +61,28 @@ async function addCollateral(
   collateral.collIndex = collIndex;
 
   const troveManagerContract = new Contract(TroveManagerAbi, troveManagerAddress, ctx.provider);
+  const addressesRegistryAddress = toHexAddress(
+    await troveManagerContract.get_addresses_registry()
+  );
+  const addressesRegistry = new Contract(
+    AddressesRegistryAbi,
+    addressesRegistryAddress,
+    ctx.provider
+  );
 
   const addresses = new CollateralAddresses(collId, ctx.indexerName);
   addresses.collateral = collId;
-  addresses.borrowerOperations = toHexAddress(await troveManagerContract.get_borrower_operations());
-  addresses.sortedTroves = toHexAddress(await troveManagerContract.get_sorted_troves());
-  addresses.stabilityPool = toHexAddress(await troveManagerContract.get_stability_pool());
+  addresses.borrowerOperations = toHexAddress(await addressesRegistry.get_borrower_operations());
+  addresses.sortedTroves = toHexAddress(await addressesRegistry.get_sorted_troves());
+  addresses.stabilityPool = toHexAddress(await addressesRegistry.get_stability_pool());
   addresses.token = tokenAddress;
-  addresses.troveManagerEventsEmitter = troveManagerEventsEmitterAddress;
+  addresses.troveManagerEventsEmitter = toHexAddress(
+    await addressesRegistry.get_trove_manager_events_emitter()
+  );
   addresses.troveManager = troveManagerAddress;
-  addresses.troveNft = toHexAddress(await troveManagerContract.get_trove_nft());
-  addresses.liquidationManager = toHexAddress(await troveManagerContract.get_liquidation_manager());
-  addresses.redemptionManager = toHexAddress(await troveManagerContract.get_redemption_manager());
+  addresses.troveNft = toHexAddress(await addressesRegistry.get_trove_nft());
+  addresses.liquidationManager = toHexAddress(await addressesRegistry.get_liquidation_manager());
+  addresses.redemptionManager = toHexAddress(await addressesRegistry.get_redemption_manager());
 
   const borrowerOperationsContract = new Contract(
     BorrowerOperationsAbi,
@@ -91,7 +95,7 @@ async function addCollateral(
   await addresses.save();
 
   const troveManager = new TroveManagerEventsEmitter(
-    troveManagerEventsEmitterAddress,
+    addresses.troveManagerEventsEmitter,
     ctx.indexerName
   );
   troveManager.collId = collId;

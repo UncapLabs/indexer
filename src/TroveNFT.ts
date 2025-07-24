@@ -7,7 +7,6 @@ const ZERO_ADDRESS = toHexAddress('0');
 
 export function createTransferHandler(ctx: Context): starknet.Writer {
   return async ({ event, rawEvent }) => {
-    console.log('SCOTT NFT event', event);
     // Minting doesn’t need to be handled as we are already
     // handling OP_OPEN_TROVE & OP_OPEN_TROVE_AND_JOIN_BATCH
     // in TroveManager.mapping.ts.

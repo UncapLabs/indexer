@@ -45,7 +45,6 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
     const provider = context.provider;
 
     const timestamp = block.timestamp;
-    console.log('SCOTT event', event);
     const troveId = event.trove_id;
 
     const troveManagerEventsEmitterAddress = toHexAddress(rawEvent.from_address);
@@ -435,10 +434,8 @@ async function updateRateBracketDebt(
 
   // add debt to new bracket
   const newRateBracket = await loadOrCreateInterestRateBracket(collId, newRateFloored, indexerName);
-  console.log('SCOTT total, newDebt', newRateBracket.totalDebt, newDebt);
   newRateBracket.totalDebt = (BigInt(newRateBracket.totalDebt) + newDebt).toString();
-  // newRateBracket.totalDebt = newDebt.toString();
-  console.log('SCOTT newRateBracket', newRateBracket);
+  // newRateBracket.totalDebt = newDebt.toString(); TODO check
   await newRateBracket.save();
 }
 

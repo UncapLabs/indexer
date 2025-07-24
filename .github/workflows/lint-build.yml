@@ -19,4 +19,4 @@ jobs:
       - run: yarn lint
       - run: yarn build
         env:
-          DATABASE_URL: 'postgresql://checkpoint_user:checkpoint_pass@localhost:5432/checkpoint'
+          DATABASE_URL: 'postgresql://checkpoint_user:checkpoint_pass@localhost:5555/checkpoint'
