@@ -1,7 +1,7 @@
 [
   {
     "type": "impl",
-    "name": "BitUSDERC20MixinImpl",
+    "name": "USDUERC20MixinImpl",
     "interface_name": "openzeppelin_token::erc20::interface::IERC20Mixin"
   },
   {
@@ -254,11 +254,11 @@
   {
     "type": "impl",
     "name": "IUSDUImpl",
-    "interface_name": "bit_usd::USDU::IUSDU"
+    "interface_name": "usdu::USDU::IUSDU"
   },
   {
     "type": "interface",
-    "name": "bit_usd::USDU::IUSDU",
+    "name": "usdu::USDU::IUSDU",
     "items": [
       {
         "type": "function",
@@ -507,7 +507,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::USDU::USDU::CollateralRegistryAddressChanged",
+    "name": "usdu::USDU::USDU::CollateralRegistryAddressChanged",
     "kind": "struct",
     "members": [
       {
@@ -519,7 +519,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::USDU::USDU::TroveManagerAddressAdded",
+    "name": "usdu::USDU::USDU::TroveManagerAddressAdded",
     "kind": "struct",
     "members": [
       {
@@ -531,7 +531,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::USDU::USDU::StabilityPoolAddressAdded",
+    "name": "usdu::USDU::USDU::StabilityPoolAddressAdded",
     "kind": "struct",
     "members": [
       {
@@ -543,7 +543,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::USDU::USDU::BorrowerOperationsAddressAdded",
+    "name": "usdu::USDU::USDU::BorrowerOperationsAddressAdded",
     "kind": "struct",
     "members": [
       {
@@ -555,7 +555,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::USDU::USDU::ActivePoolAddressAdded",
+    "name": "usdu::USDU::USDU::ActivePoolAddressAdded",
     "kind": "struct",
     "members": [
       {
@@ -685,32 +685,32 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::USDU::USDU::Event",
+    "name": "usdu::USDU::USDU::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "CollateralRegistryAddressChanged",
-        "type": "bit_usd::USDU::USDU::CollateralRegistryAddressChanged",
+        "type": "usdu::USDU::USDU::CollateralRegistryAddressChanged",
         "kind": "nested"
       },
       {
         "name": "TroveManagerAddressAdded",
-        "type": "bit_usd::USDU::USDU::TroveManagerAddressAdded",
+        "type": "usdu::USDU::USDU::TroveManagerAddressAdded",
         "kind": "nested"
       },
       {
         "name": "StabilityPoolAddressAdded",
-        "type": "bit_usd::USDU::USDU::StabilityPoolAddressAdded",
+        "type": "usdu::USDU::USDU::StabilityPoolAddressAdded",
         "kind": "nested"
       },
       {
         "name": "BorrowerOperationsAddressAdded",
-        "type": "bit_usd::USDU::USDU::BorrowerOperationsAddressAdded",
+        "type": "usdu::USDU::USDU::BorrowerOperationsAddressAdded",
         "kind": "nested"
       },
       {
         "name": "ActivePoolAddressAdded",
-        "type": "bit_usd::USDU::USDU::ActivePoolAddressAdded",
+        "type": "usdu::USDU::USDU::ActivePoolAddressAdded",
         "kind": "nested"
       },
       {

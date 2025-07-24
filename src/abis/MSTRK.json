@@ -1,8 +1,8 @@
 [
   {
     "type": "impl",
-    "name": "IMockWETHImpl",
-    "interface_name": "bit_usd::mocks::MWETH::IMockWETH"
+    "name": "IMockSTRKImpl",
+    "interface_name": "usdu::mocks::MSTRK::IMockSTRK"
   },
   {
     "type": "struct",
@@ -20,7 +20,7 @@
   },
   {
     "type": "interface",
-    "name": "bit_usd::mocks::MWETH::IMockWETH",
+    "name": "usdu::mocks::MSTRK::IMockSTRK",
     "items": [
       {
         "type": "function",
@@ -358,7 +358,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::mocks::MWETH::MWETH::Event",
+    "name": "usdu::mocks::MSTRK::MSTRK::Event",
     "kind": "enum",
     "variants": [
       {

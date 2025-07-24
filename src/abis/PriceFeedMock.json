@@ -2,7 +2,7 @@
   {
     "type": "impl",
     "name": "IPriceFeedMockImpl",
-    "interface_name": "bit_usd::mocks::PriceFeedMock::IPriceFeedMock"
+    "interface_name": "usdu::mocks::PriceFeedMock::IPriceFeedMock"
   },
   {
     "type": "struct",
@@ -34,7 +34,7 @@
   },
   {
     "type": "interface",
-    "name": "bit_usd::mocks::PriceFeedMock::IPriceFeedMock",
+    "name": "usdu::mocks::PriceFeedMock::IPriceFeedMock",
     "items": [
       {
         "type": "function",
@@ -100,7 +100,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::mocks::PriceFeedMock::PriceFeedMock::LastGoodPriceUpdated",
+    "name": "usdu::mocks::PriceFeedMock::PriceFeedMock::LastGoodPriceUpdated",
     "kind": "struct",
     "members": [
       {
@@ -112,12 +112,12 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::mocks::PriceFeedMock::PriceFeedMock::Event",
+    "name": "usdu::mocks::PriceFeedMock::PriceFeedMock::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "LastGoodPriceUpdated",
-        "type": "bit_usd::mocks::PriceFeedMock::PriceFeedMock::LastGoodPriceUpdated",
+        "type": "usdu::mocks::PriceFeedMock::PriceFeedMock::LastGoodPriceUpdated",
         "kind": "nested"
       }
     ]

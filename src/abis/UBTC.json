@@ -347,7 +347,7 @@
   },
   {
     "type": "event",
-    "name": "bit_usd::mocks::UBTC::UBTC::Event",
+    "name": "usdu::mocks::UBTC::UBTC::Event",
     "kind": "enum",
     "variants": [
       {

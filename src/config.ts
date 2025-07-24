@@ -23,8 +23,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 15000,
     sources: [
       {
-        contract: '0x3dceaae3f78fe55bb93e1ca2e0afa9dc5aeb1c2f352217e717b97107bce680f',
-        start: 1060055,
+        contract: '0xeb8ffc5e13ea5ca2a8d4b078bf682cf4ebde29197e075e7640a5fbba7239d2',
+        start: 1173893,
         abi: 'USDU',
         events: [
           {
@@ -33,17 +33,6 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
           }
         ]
       }
-      // {
-      //   contract: '0x00d98cf01b5bea47490702ced60943cce619599dba09cf3aeae6993c4f1b2ef2',
-      //   start: 1060055,
-      //   abi: 'TroveManagerEventsEmitter',
-      //   events: [
-      //     {
-      //       name: 'TroveOperation',
-      //       fn: 'handleTroveOperation'
-      //     }
-      //   ]
-      // }
     ],
     templates: {
       TroveManagerEventsEmitter: {
