@@ -21,6 +21,14 @@ enum LeverageUpdate {
   unchanged
 }
 
+function touchedByUser(trove: Trove, timestamp: number, status: string): void {
+  trove.status = status;
+  trove.lastUserActionAt = timestamp;
+  trove.redemptionCount = 0;
+  trove.redeemedColl = BigInt(0).toString();
+  trove.redeemedDebt = BigInt(0).toString();
+}
+
 // see Operation enum in contracts
 //
 const OP_OPEN_TROVE = 'OpenTrove';
@@ -85,7 +93,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
         false,
         context
       );
-      trove.status = 'active';
+      touchedByUser(trove, timestamp, 'active');
       await trove.save();
       return;
     }
@@ -128,7 +136,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
         false,
         context
       );
-      trove.status = 'active';
+      touchedByUser(trove, timestamp, 'active');
       await trove.save();
       return;
     }
@@ -136,14 +144,14 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
     if (operation === OP_SET_INTEREST_BATCH_MANAGER) {
       const batchManager = await tm.get_troves(troveId).interest_batch_manager;
       trove = await enterBatch(collId, troveId, timestamp, batchManager, indexerName);
-      trove.status = 'active';
+      touchedByUser(trove, timestamp, 'active');
       await trove.save();
       return;
     }
 
     if (operation === OP_REMOVE_FROM_BATCH) {
       trove = await leaveBatch(collId, troveId, timestamp, event.annualInterestRate, indexerName);
-      trove.status = 'active';
+      touchedByUser(trove, timestamp, 'active');
       await trove.save();
       return;
     }
@@ -159,6 +167,13 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
         context
       );
       trove.status = 'redeemed';
+      trove.redemptionCount += 1;
+      trove.redeemedColl = (
+        BigInt(trove.redeemedColl) - BigInt(event.coll_change_from_operation)
+      ).toString();
+      trove.redeemedDebt = (
+        BigInt(trove.redeemedDebt) - BigInt(event.debt_change_from_operation)
+      ).toString();
       await trove.save();
       return;
     }
@@ -185,7 +200,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       );
 
       trove.closedAt = timestamp;
-      trove.status = 'closed';
+      touchedByUser(trove, timestamp, 'closed');
       await trove.save();
       return;
     }
@@ -257,6 +272,11 @@ async function createTrove(
   trove.status = 'active';
   trove.troveId = toHexAddress(troveId);
   trove.updatedAt = timestamp;
+  trove.lastUserActionAt = timestamp;
+  trove.previousOwner = toHexAddress('0');
+  trove.redemptionCount = 0;
+  trove.redeemedColl = BigInt(0).toString();
+  trove.redeemedDebt = BigInt(0).toString();
 
   // batches are handled separately, not
   // when creating the trove but right after

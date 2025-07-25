@@ -46,6 +46,7 @@ export function createTransferHandler(ctx: Context): starknet.Writer {
     );
 
     // update the trove borrower
+    trove.previousOwner = trove.borrower;
     trove.borrower = toAddress;
     await trove.save();
   };

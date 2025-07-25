@@ -56,12 +56,17 @@ type Trove {
   mightBeLeveraged: Boolean!
   status: String! #TroveStatus
   updatedAt: Int!
+  lastUserActionAt: Int!
   debt: BigDecimalU256!
   deposit: BigDecimalU256!
   interestBatch: InterestBatch
   interestRate: BigDecimalU256!
   stake: BigDecimalU256!
   troveId: String!
+  previousOwner: String!
+  redemptionCount: Int!
+  redeemedColl: BigDecimalU256!
+  redeemedDebt: BigDecimalU256!
 }
 
 type TroveManagerEventsEmitter {
