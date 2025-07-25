@@ -121,7 +121,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
         true,
         context
       );
-      const batchManager = await tm.get_troves(troveId).interest_batch_manager;
+      const batchManager = await tm.get_trove(troveId).interest_batch_manager;
       await enterBatch(collId, troveId, timestamp, batchManager, indexerName);
       return;
     }
@@ -142,7 +142,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
     }
 
     if (operation === OP_SET_INTEREST_BATCH_MANAGER) {
-      const batchManager = await tm.get_troves(troveId).interest_batch_manager;
+      const batchManager = await tm.get_trove(troveId).interest_batch_manager;
       trove = await enterBatch(collId, troveId, timestamp, batchManager, indexerName);
       touchedByUser(trove, timestamp, 'active');
       await trove.save();
@@ -317,7 +317,7 @@ async function updateTrove(
   const newDebt = troveData.entire_debt;
   const newDeposit = troveData.entire_coll;
   const newInterestRate = troveData.annual_interest_rate;
-  const newStake = (await troveManagerContract.get_troves(troveId)).stake;
+  const newStake = (await troveManagerContract.get_trove(troveId)).stake;
 
   await collateral.save();
 
