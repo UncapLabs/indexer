@@ -12,8 +12,6 @@ const CONFIG = {
   }
 };
 
-// Trove Manger Event emitter: 0x074243f37fe2ebb3469499d8ee8480a443c115cdd381014be004fc1291ecbaae
-
 export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig {
   const { networkNodeUrl } = CONFIG[indexerName];
 
@@ -23,8 +21,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 15000,
     sources: [
       {
-        contract: '0x12d65928d598edb0e97a662b78cc365bb300f2d0503ac09906db0478f684af0',
-        start: 1193808,
+        contract: '0x749f17344784a1e4b6f6549a58aa0911edce31c85182658f8de2c4a314d8207',
+        start: 1240867,
         abi: 'USDU',
         events: [
           {
