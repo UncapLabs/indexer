@@ -18,7 +18,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
   return {
     network_node_url: networkNodeUrl,
     optimistic_indexing: false,
-    fetch_interval: 15000,
+    fetch_interval: 1000,
     sources: [
       {
         contract: '0x749f17344784a1e4b6f6549a58aa0911edce31c85182658f8de2c4a314d8207',
