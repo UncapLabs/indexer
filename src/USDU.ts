@@ -19,7 +19,7 @@ export function createCollateralRegistryAddressChangedHandler(ctx: Context): sta
       event.new_collateral_registry,
       ctx.provider
     );
-    const totalCollaterals: number = await registry.get_total_collaterals();
+    const totalCollaterals: number = await registry.get_num_collaterals();
 
     for (let index = 0; index < totalCollaterals; index++) {
       const token = toHexAddress(await registry.get_collateral(index));
