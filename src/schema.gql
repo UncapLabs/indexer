@@ -69,6 +69,11 @@ type Trove {
   redeemedDebt: BigDecimalU256!
 }
 
+type TroveNFT {
+  id: ID! # "TroveNFTAddress"
+  collId: String!
+}
+
 type TroveManagerEventsEmitter {
   id: ID! # "TroveManagerEventsEmitterAddress"
   collId: String!

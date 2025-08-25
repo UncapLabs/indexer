@@ -5,7 +5,12 @@ import TroveManagerAbi from './abis/TroveManager.json';
 import AddressesRegistryAbi from './abis/AddressesRegistry.json';
 import { Contract } from 'starknet';
 import { starknet } from '@snapshot-labs/checkpoint';
-import { Collateral, CollateralAddresses, TroveManagerEventsEmitter } from '../.checkpoint/models';
+import {
+  Collateral,
+  CollateralAddresses,
+  TroveManagerEventsEmitter,
+  TroveNFT
+} from '../.checkpoint/models';
 import { Instance } from '@snapshot-labs/checkpoint';
 import { FullBlock } from '@snapshot-labs/checkpoint/dist/src/providers/starknet';
 import { toHexAddress } from './shared';
@@ -101,6 +106,10 @@ async function addCollateral(
   troveManager.collId = collId;
 
   await troveManager.save();
+
+  const troveNft = new TroveNFT(addresses.troveNft, ctx.indexerName);
+  troveNft.collId = collId;
+  await troveNft.save();
 
   await helpers.executeTemplate('TroveManagerEventsEmitter', {
     contract: addresses.troveManagerEventsEmitter,

@@ -246,24 +246,12 @@ async function createTrove(
   const troveFullId = `${collId}:${toHexAddress(troveId)}`;
 
   let trove = await Trove.loadEntity(troveFullId, ctx.indexerName);
-  if (trove) {
-    throw new Error(`Trove already exists: ${troveFullId}`);
-  }
-
-  const addresses = await CollateralAddresses.loadEntity(collId, ctx.indexerName);
-  const nftContract = new Contract(TroveNFTAbi, addresses.troveNft, ctx.provider);
-  const borrower = toHexAddress(await nftContract.owner_of(troveId));
-
-  await updateBorrowerTrovesCount(
-    BorrowerTrovesCountUpdate.add,
-    borrower,
-    collateral.collIndex,
-    ctx.indexerName
-  );
+  // Trove might should already have been created by the transfer handler
 
   // create trove
   trove = new Trove(troveFullId, ctx.indexerName);
-  trove.borrower = borrower;
+  trove.borrower = toHexAddress(0);
+  trove.previousOwner = toHexAddress(0);
   trove.collateral = collId;
   trove.createdAt = timestamp;
   trove.debt = debt.toString();
@@ -273,10 +261,11 @@ async function createTrove(
   trove.troveId = toHexAddress(troveId);
   trove.updatedAt = timestamp;
   trove.lastUserActionAt = timestamp;
-  trove.previousOwner = toHexAddress('0');
   trove.redemptionCount = 0;
   trove.redeemedColl = BigInt(0).toString();
   trove.redeemedDebt = BigInt(0).toString();
+
+  // We leave out .borrower and .previousOwner as they are set by the transfer handler
 
   // batches are handled separately, not
   // when creating the trove but right after
@@ -326,7 +315,7 @@ async function updateTrove(
     if (!createIfMissing) {
       throw new Error(`Trove not found: ${troveFullId}`);
     }
-    const trove = createTrove(
+    const trove = await createTrove(
       collateral,
       troveId,
       newDebt,
@@ -340,7 +329,7 @@ async function updateTrove(
 
     // update interest rate brackets (no need to check if the trove
     // is in a batch as this is done after calling updateTrove())
-    updateRateBracketDebt(
+    await updateRateBracketDebt(
       collId,
       prevInterestRate,
       newInterestRate,
