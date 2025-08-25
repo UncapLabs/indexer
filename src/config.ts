@@ -21,8 +21,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 1000,
     sources: [
       {
-        contract: '0x749f17344784a1e4b6f6549a58aa0911edce31c85182658f8de2c4a314d8207',
-        start: 1240867,
+        contract: '0x049169e5c6ca88b91e7dd1d7c77862610ba041e14404d445a520533956fb3394',
+        start: 1707167,
         abi: 'USDU',
         events: [
           {
