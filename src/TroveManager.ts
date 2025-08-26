@@ -44,7 +44,7 @@ const OP_REMOVE_FROM_BATCH = 'RemoveFromBatch';
 const FLASH_LOAN_TOPIC = 'TODO'; // TODO: should be the hash of the flash loan event
 
 export function createTroveOperationHandler(context: Context): starknet.Writer {
-  return async ({ block, event, rawEvent }) => {
+  return async ({ block, event, rawEvent, txId }) => {
     if (!block || !event || !rawEvent) return;
     const operation: string = new CairoCustomEnum(event.operation.variant).activeVariant();
 
@@ -222,6 +222,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       trove.deposit = BigInt(event.coll_increase_from_redist).toString();
       trove.closedAt = timestamp;
       trove.status = 'liquidated';
+      trove.liquidationTx = txId;
       await trove.save();
       return;
     }

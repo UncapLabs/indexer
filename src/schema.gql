@@ -67,6 +67,7 @@ type Trove {
   redemptionCount: Int!
   redeemedColl: BigDecimalU256!
   redeemedDebt: BigDecimalU256!
+  liquidationTx: String
 }
 
 type TroveNFT {
