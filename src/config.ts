@@ -21,8 +21,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 1000,
     sources: [
       {
-        contract: '0x049169e5c6ca88b91e7dd1d7c77862610ba041e14404d445a520533956fb3394',
-        start: 1707167,
+        contract: '0x646b3c34b9e1466714bc3ab62a6c1b710dfd53ed55c1249e0c20fcac3517460',
+        start: 1721683,
         abi: 'USDU',
         events: [
           {
@@ -43,6 +43,10 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
           {
             name: 'BatchUpdated',
             fn: 'handleBatchUpdated'
+          },
+          {
+            name: 'Liquidation',
+            fn: 'handleLiquidation'
           }
         ]
       },

@@ -1,6 +1,5 @@
 import { Contract } from 'starknet';
 import TroveManagerAbi from './abis/TroveManager.json';
-import TroveNFTAbi from './abis/TroveNFT.json';
 import { starknet } from '@snapshot-labs/checkpoint';
 import { Collateral, InterestBatch, Trove } from '../.checkpoint/models';
 import {
