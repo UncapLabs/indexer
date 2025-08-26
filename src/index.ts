@@ -9,6 +9,8 @@ import { createStarknetWriters } from './writers';
 import { RpcProvider } from 'starknet';
 import overrides from './overrides.json';
 
+const PRODUCTION_INDEXER_DELAY = 60 * 1000;
+
 export type Context = {
   indexerName: string;
   provider: RpcProvider;
@@ -57,6 +59,10 @@ checkpoint.addIndexer('sepolia', sepoliaConfig, sepoliaIndexer);
 async function run() {
   await checkpoint.resetMetadata();
   await checkpoint.reset();
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Delaying indexer to prevent multiple processes indexing at the same time.');
+    await sleep(PRODUCTION_INDEXER_DELAY);
+  }
   await checkpoint.start();
 }
 run();
