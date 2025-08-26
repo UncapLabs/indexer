@@ -59,12 +59,12 @@ const checkpoint = new Checkpoint(schema, {
 checkpoint.addIndexer('sepolia', sepoliaConfig, sepoliaIndexer);
 
 async function run() {
-  await checkpoint.resetMetadata();
-  await checkpoint.reset();
   if (process.env.NODE_ENV === 'production') {
     console.log('Delaying indexer to prevent multiple processes indexing at the same time.');
     await sleep(PRODUCTION_INDEXER_DELAY);
   }
+  await checkpoint.resetMetadata();
+  await checkpoint.reset();
   await checkpoint.start();
 }
 run();
