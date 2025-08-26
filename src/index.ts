@@ -9,6 +9,8 @@ import { createStarknetWriters } from './writers';
 import { RpcProvider } from 'starknet';
 import overrides from './overrides.json';
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const PRODUCTION_INDEXER_DELAY = 60 * 1000;
 
 export type Context = {
