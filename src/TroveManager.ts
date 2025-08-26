@@ -244,11 +244,13 @@ async function createTrove(
   const collId = collateral.collIndex.toString();
   const troveFullId = `${collId}:${toHexAddress(troveId)}`;
 
-  let trove = await Trove.loadEntity(troveFullId, ctx.indexerName);
-  // Trove might should already have been created by the transfer handler
+  const potentialTrove = await Trove.loadEntity(troveFullId, ctx.indexerName);
+  if (potentialTrove) {
+    throw new Error(`Trove not found: ${troveFullId}`);
+  }
 
   // create trove
-  trove = new Trove(troveFullId, ctx.indexerName);
+  const trove = new Trove(troveFullId, ctx.indexerName);
   trove.borrower = toHexAddress(0);
   trove.previousOwner = toHexAddress(0);
   trove.collateral = collId;

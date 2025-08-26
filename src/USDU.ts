@@ -115,6 +115,7 @@ async function addCollateral(
     contract: addresses.troveManagerEventsEmitter,
     start: block.block_number
   });
+
   await helpers.executeTemplate('TroveNFT', {
     contract: addresses.troveNft,
     start: block.block_number

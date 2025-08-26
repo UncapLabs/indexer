@@ -14,7 +14,7 @@ export async function updateBorrowerTrovesCount(
   const borrowerId = borrower;
   let borrowerInfo = await BorrowerInfo.loadEntity(borrowerId, indexerName);
 
-  const maxCollateralsCount = 10;
+  const maxCollateralsCount = 20;
 
   if (!borrowerInfo) {
     borrowerInfo = new BorrowerInfo(borrowerId, indexerName);
