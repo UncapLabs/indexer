@@ -43,10 +43,6 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
           {
             name: 'BatchUpdated',
             fn: 'handleBatchUpdated'
-          },
-          {
-            name: 'Liquidation',
-            fn: 'handleLiquidation'
           }
         ]
       },
