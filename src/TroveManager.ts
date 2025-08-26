@@ -218,8 +218,8 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
         await leaveBatch(collId, troveId, timestamp, BigInt(0), indexerName);
       }
 
-      trove.debt = event.debt_increase_from_redist;
-      trove.deposit = event.coll_increase_from_redist;
+      trove.debt = BigInt(event.debt_increase_from_redist).toString();
+      trove.deposit = BigInt(event.coll_increase_from_redist).toString();
       trove.closedAt = timestamp;
       trove.status = 'liquidated';
       await trove.save();
@@ -246,7 +246,7 @@ async function createTrove(
 
   const potentialTrove = await Trove.loadEntity(troveFullId, ctx.indexerName);
   if (potentialTrove) {
-    throw new Error(`Trove not found: ${troveFullId}`);
+    throw new Error(`Trove already exists: ${troveFullId}`);
   }
 
   // create trove
@@ -304,10 +304,10 @@ async function updateTrove(
   const prevInterestRate = trove ? BigInt(trove.interestRate) : BigInt(0);
 
   const troveData = await troveManagerContract.get_latest_trove_data(troveId);
-  const newDebt = troveData.entire_debt;
-  const newDeposit = troveData.entire_coll;
-  const newInterestRate = troveData.annual_interest_rate;
-  const newStake = (await troveManagerContract.get_trove(troveId)).stake;
+  const newDebt = BigInt(troveData.entire_debt);
+  const newDeposit = BigInt(troveData.entire_coll);
+  const newInterestRate = BigInt(troveData.annual_interest_rate);
+  const newStake = BigInt((await troveManagerContract.get_trove(troveId)).stake);
 
   await collateral.save();
 
@@ -353,10 +353,11 @@ async function updateTrove(
     );
   }
 
-  trove.debt = newDebt;
-  trove.deposit = newDeposit;
-  trove.interestRate = trove.interestBatch === null ? newInterestRate : BigInt(0);
-  trove.stake = newStake;
+  trove.debt = newDebt.toString();
+  trove.deposit = newDeposit.toString();
+  trove.interestRate =
+    trove.interestBatch === null ? newInterestRate.toString() : BigInt(0).toString();
+  trove.stake = newStake.toString();
 
   if (leverageUpdate !== LeverageUpdate.unchanged) {
     trove.mightBeLeveraged = leverageUpdate === LeverageUpdate.yes;
