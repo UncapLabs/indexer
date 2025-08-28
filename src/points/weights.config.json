@@ -1,0 +1,9 @@
+{
+  "positions": {
+    "0x06c964c5f8de4f9b64e50861b548f924c3fb10c9254040bcf6807699ca0bf66d": {
+      "weight": 2.0,
+      "type": "stability_pool",
+      "description": "GBTC Stability Pool"
+    }
+  }
+}

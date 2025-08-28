@@ -1,6 +1,7 @@
 import { createTroveOperationHandler, createBatchUpdatedHandler } from './TroveManager';
 import { createTransferHandler } from './TroveNFT';
 import { createCollateralRegistryAddressChangedHandler } from './USDU';
+import { createStabilityPoolOperationHandler } from './points/StabilityPool';
 import { Context } from './index';
 
 export function createStarknetWriters(context: Context) {
@@ -9,11 +10,13 @@ export function createStarknetWriters(context: Context) {
     createCollateralRegistryAddressChangedHandler(context);
   const handleTransfer = createTransferHandler(context);
   const handleBatchUpdated = createBatchUpdatedHandler(context);
+  const handleStabilityPoolOperation = createStabilityPoolOperationHandler(context);
 
   return {
     handleTroveOperation,
     handleCollateralRegistryAddressChanged,
     handleTransfer,
-    handleBatchUpdated
+    handleBatchUpdated,
+    handleStabilityPoolOperation
   };
 }
