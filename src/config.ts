@@ -22,8 +22,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 1000,
     sources: [
       {
-        contract: '0x646b3c34b9e1466714bc3ab62a6c1b710dfd53ed55c1249e0c20fcac3517460',
-        start: 1721682,
+        contract: '0x2e44310287e623fda88ee032c72d0083d037513a7d1fe666ad3f2b1a11116e6',
+        start: 1760464,
         abi: 'USDU',
         events: [
           {
@@ -33,8 +33,19 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
         ]
       },
       {
-        contract: '0x6c964c5f8de4f9b64e50861b548f924c3fb10c9254040bcf6807699ca0bf66d',
-        start: 1721813,
+        contract: '0x2e375f67ffbc6d1a0e50d3ca104d814c4aabad01ebbe5c79cd491f47be09731',
+        start: 1760464,
+        abi: 'StabilityPool',
+        events: [
+          {
+            name: 'DepositOperation',
+            fn: 'handleStabilityPoolOperation'
+          }
+        ]
+      },
+      {
+        contract: '0x2e375f67ffbc6d1a0e50d3ca104d814c4aabad01ebbe5c79cd491f47be09731',
+        start: 1760464,
         abi: 'StabilityPool',
         events: [
           {

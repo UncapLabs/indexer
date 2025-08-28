@@ -4,6 +4,11 @@
       "weight": 2.0,
       "type": "stability_pool",
       "description": "GBTC Stability Pool"
+    },
+    "0x0554a9f4e030afe9324b8708ef0db2ae4d246fb44dcf84c4166f0788f600143e": {
+      "weight": 5.0,
+      "type": "stability_pool",
+      "description": "UBTC Stability Pool"
     }
   }
 }

@@ -55,6 +55,7 @@ export async function updateUserPointsAndTotals(
     stabilityPoolPosition.lastUpdateTime = timestamp;
 
     // Update totals
+    console.log('ADDING: \nstabilityPoolPosition.pointsEarned', stabilityPoolPosition.pointsEarned);
     totalPoints += BigInt(stabilityPoolPosition.pointsEarned);
     totalValue += BigInt(stabilityPoolPosition.value);
     totalRate += BigInt(stabilityPoolPosition.earningRate);
