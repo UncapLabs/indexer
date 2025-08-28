@@ -22,7 +22,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 1000,
     sources: [
       {
-        contract: '0x2e44310287e623fda88ee032c72d0083d037513a7d1fe666ad3f2b1a11116e6',
+        contract: '0x4e673401f1db9f478d9c9092f3a1ec56cb3b2b6b6ea583029c6f4729693a7af',
         start: 1760464,
         abi: 'USDU',
         events: [
@@ -33,7 +33,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
         ]
       },
       {
-        contract: '0x2e375f67ffbc6d1a0e50d3ca104d814c4aabad01ebbe5c79cd491f47be09731',
+        contract: '0x239ea2fe06841aa7651ae3eba7da15322838e2dbc490aaf3304c4cfe5b50fd6',
         start: 1760464,
         abi: 'StabilityPool',
         events: [
@@ -44,7 +44,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
         ]
       },
       {
-        contract: '0x2e375f67ffbc6d1a0e50d3ca104d814c4aabad01ebbe5c79cd491f47be09731',
+        contract: '0x93e433139cd2d79faf1ce8000ca68a29d2eb15986887c39e055d266866a1d8',
         start: 1760464,
         abi: 'StabilityPool',
         events: [
