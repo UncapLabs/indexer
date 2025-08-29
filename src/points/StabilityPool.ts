@@ -124,6 +124,7 @@ export function createStabilityPoolOperationHandler(context: Context): starknet.
     const colGainSinceLastOperation = BigInt(event.col_gain_since_last_operation);
     const colGainClaimed = BigInt(event.col_gain_claimed);
     const topUpOrWithdrawal = BigInt(event.top_up_or_withdrawal.abs);
+    console.log('Indexing stability pool operation: ', operation);
 
     const indexerName = context.indexerName;
 
