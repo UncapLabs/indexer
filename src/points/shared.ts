@@ -15,10 +15,43 @@ export function toHexAddress(address: string | bigint | number): string {
 
 // Helper function to get weight for a position by address
 export function getWeightByAddress(address: string): bigint {
-  const position = weightsConfig.positions[address];
+  // Try the address as-is first
+  let position = weightsConfig.positions[address];
+
   if (!position || !position.weight) {
-    throw new Error(`Weight not found for address: ${address}`);
+    // Try removing leading zeros after 0x prefix
+    let modifiedAddress = address;
+
+    // Try up to 6 times to remove leading zeros
+    for (let i = 0; i < 6; i++) {
+      // Remove one leading zero after 0x if it exists
+      if (modifiedAddress.startsWith('0x0')) {
+        modifiedAddress = `0x${modifiedAddress.slice(3)}`;
+        position = weightsConfig.positions[modifiedAddress];
+
+        if (position && position.weight) {
+          return BigInt(Math.floor(position.weight));
+        }
+      } else {
+        break; // No more leading zeros to remove
+      }
+    }
+
+    // If still not found, try adding leading zeros (in case config has more padding)
+    modifiedAddress = address;
+    for (let i = 0; i < 6; i++) {
+      // Add one leading zero after 0x
+      modifiedAddress = `0x0${modifiedAddress.slice(2)}`;
+      position = weightsConfig.positions[modifiedAddress];
+
+      if (position && position.weight) {
+        return BigInt(Math.floor(position.weight));
+      }
+    }
+
+    throw new Error(`Weight not found for address: ${address} (tried multiple padding variations)`);
   }
+
   return BigInt(Math.floor(position.weight));
 }
 
@@ -48,14 +81,12 @@ export async function updateUserPointsAndTotals(
     // If SP just got updated, timeDiff will be 0, so pointsEarned will be 0
     const pointsEarnedSinceLastUpdate =
       BigInt(stabilityPoolPosition.earningRate) * BigInt(timeDiff);
-    console.log('pointsEarnedSinceLastUpdate 2:', pointsEarnedSinceLastUpdate);
     stabilityPoolPosition.pointsEarned = (
       BigInt(stabilityPoolPosition.pointsEarned) + pointsEarnedSinceLastUpdate
     ).toString();
     stabilityPoolPosition.lastUpdateTime = timestamp;
 
     // Update totals
-    console.log('ADDING: \nstabilityPoolPosition.pointsEarned', stabilityPoolPosition.pointsEarned);
     totalPoints += BigInt(stabilityPoolPosition.pointsEarned);
     totalValue += BigInt(stabilityPoolPosition.value);
     totalRate += BigInt(stabilityPoolPosition.earningRate);
