@@ -168,10 +168,10 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       trove.status = 'redeemed';
       trove.redemptionCount += 1;
       trove.redeemedColl = (
-        BigInt(trove.redeemedColl) - BigInt(event.coll_change_from_operation)
+        BigInt(trove.redeemedColl) + BigInt(event.coll_change_from_operation.abs)
       ).toString();
       trove.redeemedDebt = (
-        BigInt(trove.redeemedDebt) - BigInt(event.debt_change_from_operation)
+        BigInt(trove.redeemedDebt) + BigInt(event.debt_change_from_operation.abs)
       ).toString();
       await trove.save();
       return;
