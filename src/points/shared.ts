@@ -30,7 +30,7 @@ export function getWeightByAddress(address: string): bigint {
         position = weightsConfig.positions[modifiedAddress];
 
         if (position && position.weight) {
-          return BigInt(Math.floor(position.weight));
+          return BigInt(Math.floor(position.weight * 1e18));
         }
       } else {
         break; // No more leading zeros to remove
@@ -45,14 +45,17 @@ export function getWeightByAddress(address: string): bigint {
       position = weightsConfig.positions[modifiedAddress];
 
       if (position && position.weight) {
-        return BigInt(Math.floor(position.weight));
+        // Scale weight by 1e18 to preserve precision for small values
+        return BigInt(Math.floor(position.weight * 1e18));
       }
     }
 
     throw new Error(`Weight not found for address: ${address} (tried multiple padding variations)`);
   }
 
-  return BigInt(Math.floor(position.weight));
+  console.log('position.weight: ', position.weight);
+  // Scale weight by 1e18 to preserve precision for small values
+  return BigInt(Math.floor(position.weight * 1e18));
 }
 
 // Update users's totals and positions' rates
@@ -73,7 +76,7 @@ export async function updateUserPointsAndTotals(
     }
     // Update Rates:
     const weight = getWeightByAddress(stabilityPoolPosition.poolAddress);
-    const newRate = BigInt(stabilityPoolPosition.value) * weight;
+    const newRate = (BigInt(stabilityPoolPosition.value) * weight) / BigInt(1e18);
 
     stabilityPoolPosition.earningRate = newRate.toString();
     const timeDiff = timestamp - stabilityPoolPosition.lastUpdateTime;
@@ -100,7 +103,7 @@ export async function updateUserPointsAndTotals(
     // Get weight by pool address
     const weight = getWeightByAddress(ekuboPosition.poolAddress);
 
-    const newRate = BigInt(ekuboPosition.value) * weight;
+    const newRate = (BigInt(ekuboPosition.value) * weight) / BigInt(1e18);
     ekuboPosition.earningRate = newRate.toString();
     const pointEarned =
       BigInt(ekuboPosition.earningRate) * BigInt(timestamp - ekuboPosition.lastUpdateTime); // Will be 0 if lastUpdateTime is 0
@@ -120,7 +123,7 @@ export async function updateUserPointsAndTotals(
     // Note: You may need to handle different weights for deposits vs borrows
     const weight = getWeightByAddress(vesuPosition.market);
 
-    const newRate = BigInt(vesuPosition.value) * weight;
+    const newRate = (BigInt(vesuPosition.value) * weight) / BigInt(1e18);
     vesuPosition.earningRate = newRate.toString();
     const pointEarned =
       BigInt(vesuPosition.earningRate) * BigInt(timestamp - vesuPosition.lastUpdateTime); // Will be 0 if lastUpdateTime is 0
