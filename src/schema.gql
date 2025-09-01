@@ -34,6 +34,9 @@ type InterestRateBracket {
   collateral: Collateral!
   rate: BigDecimalU256!
   totalDebt: BigDecimalU256!
+  sumDebtTimesRateD36: BigDecimalU256!
+  pendingDebtTimesOneYearD36: BigDecimalU256!
+  updatedAt: Int!
 }
 
 type InterestBatch {
@@ -45,6 +48,7 @@ type InterestBatch {
   annualInterestRate: BigDecimalU256!
   annualManagementFee: BigDecimalU256!
   troves: [Trove!]! @derivedFrom(field: "interestBatch")
+  updatedAt: Int!
 }
 
 type Trove {

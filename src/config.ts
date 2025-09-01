@@ -64,6 +64,14 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
             fn: 'handleTroveOperation'
           },
           {
+            name: 'TroveUpdated',
+            fn: 'handleTroveUpdated'
+          },
+          {
+            name: 'BatchedTroveUpdated',
+            fn: 'handleBatchedTroveUpdated'
+          },
+          {
             name: 'BatchUpdated',
             fn: 'handleBatchUpdated'
           }

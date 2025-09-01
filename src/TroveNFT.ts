@@ -13,11 +13,11 @@ export function createTransferHandler(ctx: Context): starknet.Writer {
 
     const troveNFT = await TroveNFT.loadEntity(eventEmitter, ctx.indexerName);
     const collId = troveNFT.collId;
-    const troveFullId = `${collId}:${toHexAddress(event.token_id)}`;
+    const troveFullId = `${collId}:${event.token_id}`;
 
     const trove = await Trove.loadEntity(troveFullId, ctx.indexerName);
     if (!trove) {
-      throw new Error(`Trove does not exist: ${troveFullId}`);
+      console.log(`Trove does not exist: ${troveFullId}, creating it`);
     }
 
     if (fromAddress !== ZERO_ADDRESS) {

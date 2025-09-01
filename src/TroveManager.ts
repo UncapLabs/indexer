@@ -1,58 +1,34 @@
-import { Contract } from 'starknet';
-import TroveManagerAbi from './abis/TroveManager.json';
 import { starknet } from '@snapshot-labs/checkpoint';
-import { Collateral, InterestBatch, Trove } from '../.checkpoint/models';
-import {
-  InterestRateBracket,
-  TroveManagerEventsEmitter,
-  CollateralAddresses
-} from '../.checkpoint/models';
-import { updateBorrowerTrovesCount, BorrowerTrovesCountUpdate } from './shared';
+import { Collateral, Trove } from '../.checkpoint/models';
+import { InterestBatch } from '../.checkpoint/models';
+import { InterestRateBracket, TroveManagerEventsEmitter } from '../.checkpoint/models';
 import { Context } from './index';
 import { toHexAddress } from './shared';
 import { CairoCustomEnum } from 'starknet';
-
-// decides whether to update the flag indicating
-// that a trove might be leveraged or not.
-enum LeverageUpdate {
-  yes,
-  no,
-  unchanged
-}
-
-function touchedByUser(trove: Trove, timestamp: number, status: string): void {
-  trove.status = status;
-  trove.lastUserActionAt = timestamp;
-  trove.redemptionCount = 0;
-  trove.redeemedColl = BigInt(0).toString();
-  trove.redeemedDebt = BigInt(0).toString();
-}
 
 // see Operation enum in contracts
 //
 const OP_OPEN_TROVE = 'OpenTrove';
 const OP_CLOSE_TROVE = 'CloseTrove';
 const OP_ADJUST_TROVE = 'AdjustTrove';
-const OP_ADJUST_TROVE_INTEREST_RATE = 'AdjustTroveInterestRate';
+// const OP_ADJUST_TROVE_INTEREST_RATE = 'AdjustTroveInterestRate';
 const OP_APPLY_PENDING_DEBT = 'ApplyPendingDebt';
 const OP_LIQUIDATE = 'Liquidate';
 const OP_REDEEM_COLLATERAL = 'RedeemCollateral';
 const OP_OPEN_TROVE_AND_JOIN_BATCH = 'OpenTroveAndJoinBatch';
-const OP_SET_INTEREST_BATCH_MANAGER = 'SetInterestBatchManager';
-const OP_REMOVE_FROM_BATCH = 'RemoveFromBatch';
+// const OP_SET_INTEREST_BATCH_MANAGER = 'SetInterestBatchManager';
+// const OP_REMOVE_FROM_BATCH = 'RemoveFromBatch';
 
 const FLASH_LOAN_TOPIC = 'TODO'; // TODO: should be the hash of the flash loan event
 
 export function createTroveOperationHandler(context: Context): starknet.Writer {
-  return async ({ block, event, rawEvent, txId }) => {
+  return async ({ block, event, rawEvent }) => {
     if (!block || !event || !rawEvent) return;
     const operation: string = new CairoCustomEnum(event.operation.variant).activeVariant();
 
     const indexerName = context.indexerName;
-    const provider = context.provider;
 
     const timestamp = block.timestamp;
-    const troveId = event.trove_id;
 
     const troveManagerEventsEmitterAddress = toHexAddress(rawEvent.from_address);
     const collId = (
@@ -65,360 +41,75 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       throw new Error(`Collateral not found: ${collId}`);
     }
 
-    const tmAddress = (await CollateralAddresses.loadEntity(collId, indexerName)).troveManager;
-    const tm = new Contract(TroveManagerAbi, tmAddress, provider);
-    let trove: Trove | null = null;
+    const troveId = `${collId}:${event.trove_id}`;
+    const trove = await Trove.loadEntity(troveId, indexerName);
 
-    if (operation === OP_OPEN_TROVE) {
-      trove = await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        getLeverageUpdate(event),
-        true,
-        context
-      );
-      return;
+    if (!trove) {
+      throw new Error(`Trove not found: ${troveId}`);
     }
 
-    if (operation === OP_ADJUST_TROVE) {
-      trove = await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        getLeverageUpdate(event),
-        false,
-        context
-      );
-      touchedByUser(trove, timestamp, 'active');
-      await trove.save();
-      return;
+    // Opening
+    if (operation === OP_OPEN_TROVE || operation === OP_OPEN_TROVE_AND_JOIN_BATCH) {
+      trove.createdAt = timestamp;
     }
 
-    if (operation === OP_APPLY_PENDING_DEBT) {
-      await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        LeverageUpdate.unchanged,
-        false,
-        context
-      );
-      return;
+    // Closing
+    if (operation === OP_CLOSE_TROVE || operation === OP_LIQUIDATE) {
+      trove.closedAt = timestamp;
     }
 
-    if (operation === OP_OPEN_TROVE_AND_JOIN_BATCH) {
-      await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        getLeverageUpdate(event),
-        true,
-        context
-      );
-      const batchManager = await tm.get_trove(troveId).interest_batch_manager;
-      await enterBatch(collId, troveId, timestamp, batchManager, indexerName);
-      return;
+    // User action
+    if (
+      operation !== OP_REDEEM_COLLATERAL &&
+      operation !== OP_LIQUIDATE &&
+      operation !== OP_APPLY_PENDING_DEBT
+    ) {
+      trove.lastUserActionAt = timestamp;
+      trove.redemptionCount = 0;
+      trove.redeemedColl = BigInt(0).toString();
+      trove.redeemedDebt = BigInt(0).toString();
+      trove.status = operation === OP_CLOSE_TROVE ? 'closed' : 'active';
     }
 
-    if (operation === OP_ADJUST_TROVE_INTEREST_RATE) {
-      trove = await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        getLeverageUpdate(event),
-        false,
-        context
-      );
-      touchedByUser(trove, timestamp, 'active');
-      await trove.save();
-      return;
-    }
-
-    if (operation === OP_SET_INTEREST_BATCH_MANAGER) {
-      const batchManager = await tm.get_trove(troveId).interest_batch_manager;
-      trove = await enterBatch(collId, troveId, timestamp, batchManager, indexerName);
-      touchedByUser(trove, timestamp, 'active');
-      await trove.save();
-      return;
-    }
-
-    if (operation === OP_REMOVE_FROM_BATCH) {
-      trove = await leaveBatch(collId, troveId, timestamp, event.annualInterestRate, indexerName);
-      touchedByUser(trove, timestamp, 'active');
-      await trove.save();
-      return;
-    }
-
+    // Redemption
     if (operation === OP_REDEEM_COLLATERAL) {
-      trove = await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        LeverageUpdate.unchanged,
-        false,
-        context
-      );
       trove.status = 'redeemed';
-      trove.redemptionCount += 1;
+      trove.redemptionCount = trove.redemptionCount + 1;
       trove.redeemedColl = (
-        BigInt(trove.redeemedColl) + BigInt(event.coll_change_from_operation.abs)
+        BigInt(trove.redeemedColl) - BigInt(event.coll_change_from_operation.abs)
       ).toString();
       trove.redeemedDebt = (
         BigInt(trove.redeemedDebt) + BigInt(event.debt_change_from_operation.abs)
       ).toString();
-      await trove.save();
-      return;
     }
 
-    if (operation === OP_CLOSE_TROVE) {
-      trove = await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        LeverageUpdate.unchanged,
-        false,
-        context
-      );
-      if (trove.interestBatch !== null) {
-        await leaveBatch(collId, troveId, timestamp, BigInt(0), indexerName);
-      }
-
-      await updateBorrowerTrovesCount(
-        BorrowerTrovesCountUpdate.remove,
-        trove.borrower,
-        collateral.collIndex,
-        indexerName
-      );
-
-      trove.closedAt = timestamp;
-      touchedByUser(trove, timestamp, 'closed');
-      await trove.save();
-      return;
-    }
-
+    // Liquidation
     if (operation === OP_LIQUIDATE) {
-      trove = await updateTrove(
-        collateral,
-        tm,
-        troveId,
-        timestamp,
-        LeverageUpdate.unchanged,
-        false,
-        context
-      );
-      if (trove.interestBatch !== null) {
-        await leaveBatch(collId, troveId, timestamp, BigInt(0), indexerName);
-      }
-
-      trove.debt = BigInt(event.debt_increase_from_redist).toString();
-      trove.deposit = BigInt(event.coll_increase_from_redist).toString();
-      trove.closedAt = timestamp;
       trove.status = 'liquidated';
-      trove.liquidationTx = txId;
-      await trove.save();
-      return;
     }
 
-    throw new Error(`Unsupported operation: ${operation.toString()}`);
+    // Infer leverage flag on opening & adjustment
+    if (
+      operation === OP_OPEN_TROVE ||
+      operation === OP_OPEN_TROVE_AND_JOIN_BATCH ||
+      operation === OP_ADJUST_TROVE
+    ) {
+      trove.mightBeLeveraged = inferLeverage(event);
+    }
+
+    trove.save();
   };
 }
 
-async function createTrove(
-  collateral: Collateral,
-  troveId: bigint,
-  debt: bigint,
-  deposit: bigint,
-  stake: bigint,
-  interestRate: bigint,
-  timestamp: number,
-  mightBeLeveraged: boolean,
-  ctx: Context
-): Promise<Trove> {
-  const collId = collateral.collIndex.toString();
-  const troveFullId = `${collId}:${toHexAddress(troveId)}`;
-
-  const potentialTrove = await Trove.loadEntity(troveFullId, ctx.indexerName);
-  if (potentialTrove) {
-    throw new Error(`Trove already exists: ${troveFullId}`);
-  }
-
-  // create trove
-  const trove = new Trove(troveFullId, ctx.indexerName);
-  trove.borrower = toHexAddress(0);
-  trove.previousOwner = toHexAddress(0);
-  trove.collateral = collId;
-  trove.createdAt = timestamp;
-  trove.debt = debt.toString();
-  trove.deposit = deposit.toString();
-  trove.stake = stake.toString();
-  trove.status = 'active';
-  trove.troveId = toHexAddress(troveId);
-  trove.updatedAt = timestamp;
-  trove.lastUserActionAt = timestamp;
-  trove.redemptionCount = 0;
-  trove.redeemedColl = BigInt(0).toString();
-  trove.redeemedDebt = BigInt(0).toString();
-
-  // We leave out .borrower and .previousOwner as they are set by the transfer handler
-
-  // batches are handled separately, not
-  // when creating the trove but right after
-  trove.interestRate = interestRate.toString();
-  trove.interestBatch = null;
-  trove.mightBeLeveraged = mightBeLeveraged;
-
-  await trove.save();
-
-  return trove;
-}
-
-// When a trove gets updated (either on TroveUpdated or BatchedTroveUpdated):
-//  1. update the collateral (branch) total deposited & debt
-//  2. create the trove entity if it doesn't exist
-//  3. create the borrower entity if it doesn't exist
-//  4. update the borrower's total trove count & trove count by collateral (branch)
-//  5. for non-batched troves, update the prev & current interest rate brackets
-//  6. update the trove's deposit, debt & stake
-async function updateTrove(
-  collateral: Collateral,
-  troveManagerContract: Contract,
-  troveId: bigint,
-  timestamp: number,
-  leverageUpdate: LeverageUpdate,
-  createIfMissing: boolean,
-  ctx: Context
-): Promise<Trove> {
-  const collId = collateral.id.toString();
-
-  const troveFullId = `${collId}:${toHexAddress(troveId)}`;
-  const trove = await Trove.loadEntity(troveFullId, ctx.indexerName);
-
-  const prevDebt = trove ? BigInt(trove.debt) : BigInt(0);
-  const prevInterestRate = trove ? BigInt(trove.interestRate) : BigInt(0);
-
-  const troveData = await troveManagerContract.get_latest_trove_data(troveId);
-  const newDebt = BigInt(troveData.entire_debt);
-  const newDeposit = BigInt(troveData.entire_coll);
-  const newInterestRate = BigInt(troveData.annual_interest_rate);
-  const newStake = BigInt((await troveManagerContract.get_trove(troveId)).stake);
-
-  await collateral.save();
-
-  // create trove if needed
-  if (!trove) {
-    if (!createIfMissing) {
-      throw new Error(`Trove not found: ${troveFullId}`);
-    }
-    const trove = await createTrove(
-      collateral,
-      troveId,
-      newDebt,
-      newDeposit,
-      newStake,
-      newInterestRate,
-      timestamp,
-      leverageUpdate === LeverageUpdate.yes,
-      ctx
-    );
-
-    // update interest rate brackets (no need to check if the trove
-    // is in a batch as this is done after calling updateTrove())
-    await updateRateBracketDebt(
-      collId,
-      prevInterestRate,
-      newInterestRate,
-      prevDebt,
-      newDebt,
-      ctx.indexerName
-    );
-    return trove;
-  }
-
-  // update interest rate brackets for non-batched troves
-  if (trove.interestBatch === null) {
-    await updateRateBracketDebt(
-      collId,
-      BigInt(prevInterestRate),
-      newInterestRate,
-      BigInt(prevDebt),
-      newDebt,
-      ctx.indexerName
-    );
-  }
-
-  trove.debt = newDebt.toString();
-  trove.deposit = newDeposit.toString();
-  trove.interestRate =
-    trove.interestBatch === null ? newInterestRate.toString() : BigInt(0).toString();
-  trove.stake = newStake.toString();
-
-  if (leverageUpdate !== LeverageUpdate.unchanged) {
-    trove.mightBeLeveraged = leverageUpdate === LeverageUpdate.yes;
-  }
-
-  trove.updatedAt = timestamp;
-  await trove.save();
-
-  return trove;
-}
-
-function getLeverageUpdate(event: starknet.ParsedEvent): LeverageUpdate {
+function inferLeverage(event: starknet.ParsedEvent): boolean {
   const receipt = event.receipt;
   const logs = receipt ? receipt.logs : [];
   for (let i = 0; i < logs.length; i++) {
     if (logs[i].topics[0].equals(FLASH_LOAN_TOPIC)) {
-      return LeverageUpdate.yes;
+      return true;
     }
   }
-  return LeverageUpdate.no;
-}
-
-// When a trove leaves a batch:
-//  1. remove the interest batch on the trove
-//  2. set the interest rate to the new rate
-//  3. add its debt to the rate bracket of the current rate
-async function leaveBatch(
-  collId: string,
-  troveId: bigint,
-  timestamp: number,
-  interestRate: bigint,
-  indexerName: string
-): Promise<Trove> {
-  const troveFullId = `${collId}:${toHexAddress(troveId)}`;
-
-  const trove = await Trove.loadEntity(troveFullId, indexerName);
-  if (trove === null) {
-    throw new Error(`Trove not found: ${troveFullId}`);
-  }
-
-  if (trove.interestBatch === null) {
-    throw new Error(`Trove is not in a batch: ${troveFullId}`);
-  }
-
-  await updateRateBracketDebt(
-    collId,
-    BigInt(0), // coming from rate 0 (in batch)
-    interestRate,
-    BigInt(0), // debt was 0 too (in batch)
-    BigInt(trove.debt),
-    indexerName
-  );
-
-  trove.interestBatch = null;
-  trove.interestRate = interestRate.toString();
-  trove.status = 'active'; // always reset the status when leaving a batch
-  trove.updatedAt = timestamp;
-  await trove.save();
-
-  return trove;
+  return false;
 }
 
 async function updateRateBracketDebt(
@@ -427,50 +118,77 @@ async function updateRateBracketDebt(
   newRate: bigint,
   prevDebt: bigint,
   newDebt: bigint,
-  indexerName: string
+  indexerName: string,
+  prevTime: number,
+  newTime: number
 ): Promise<void> {
-  const prevRateFloored = prevRate ? getRateFloored(prevRate) : null;
-  const newRateFloored = getRateFloored(newRate);
+  let rateBracket: InterestRateBracket | null = null;
 
   // remove debt from prev bracket
-  if (prevRateFloored !== null) {
-    const prevRateBracket = await InterestRateBracket.loadEntity(
-      `${collId}:${prevRateFloored.toString()}`,
-      indexerName
-    );
-    if (prevRateBracket) {
-      prevRateBracket.totalDebt = (BigInt(prevRateBracket.totalDebt) - prevDebt).toString();
-      await prevRateBracket.save();
+  if (prevRate !== 0n) {
+    const rateFloored = getRateFloored(prevRate);
+    const rateBracketId = `${collId}:${rateFloored.toString()}`;
+    rateBracket = await InterestRateBracket.loadEntity(rateBracketId, indexerName);
+    if (!rateBracket) {
+      throw new Error(`Prev rate bracket not found: ${rateBracketId}`);
     }
+
+    rateBracket.totalDebt = (BigInt(rateBracket.totalDebt) - prevDebt).toString();
+    // Break down the computation into meaningful parts
+    const currentBracketInterestAccrual =
+      (BigInt(newTime) + BigInt(rateBracket.updatedAt)) * BigInt(rateBracket.sumDebtTimesRateD36);
+    const previousBracketInterestAccrual =
+      (BigInt(newTime) - BigInt(prevTime)) * prevDebt * prevRate;
+
+    rateBracket.pendingDebtTimesOneYearD36 = (
+      BigInt(rateBracket.pendingDebtTimesOneYearD36) +
+      currentBracketInterestAccrual -
+      previousBracketInterestAccrual
+    ).toString();
+
+    rateBracket.sumDebtTimesRateD36 = (
+      BigInt(rateBracket.sumDebtTimesRateD36) -
+      prevDebt * prevRate
+    ).toString();
+    rateBracket.updatedAt = newTime;
   }
 
   // add debt to new bracket
-  const newRateBracket = await loadOrCreateInterestRateBracket(collId, newRateFloored, indexerName);
-  newRateBracket.totalDebt = (BigInt(newRateBracket.totalDebt) + newDebt).toString();
-  // newRateBracket.totalDebt = newDebt.toString(); TODO check
-  await newRateBracket.save();
-}
+  if (newRate !== 0n) {
+    const rateFloored = getRateFloored(newRate);
+    const rateBracketId = `${collId}:${rateFloored.toString()}`;
 
-async function loadOrCreateInterestRateBracket(
-  collId: string,
-  rateFloored: bigint,
-  indexerName: string
-): Promise<InterestRateBracket> {
-  const rateBracketId = `${collId}:${rateFloored.toString()}`;
-  let rateBracket = await InterestRateBracket.loadEntity(rateBracketId, indexerName);
+    if (!rateBracket || rateBracket.id !== rateBracketId) {
+      if (rateBracket) {
+        await rateBracket.save();
+      }
 
-  if (!rateBracket) {
-    rateBracket = new InterestRateBracket(rateBracketId, indexerName);
-    rateBracket.collateral = collId;
-    rateBracket.rate = rateFloored.toString();
-    rateBracket.totalDebt = BigInt(0).toString();
+      if (!(rateBracket = await InterestRateBracket.loadEntity(rateBracketId, indexerName))) {
+        rateBracket = new InterestRateBracket(rateBracketId, indexerName);
+        rateBracket.collateral = collId;
+        rateBracket.rate = rateFloored.toString();
+        rateBracket.totalDebt = BigInt(0).toString();
+        rateBracket.sumDebtTimesRateD36 = BigInt(0).toString();
+        rateBracket.pendingDebtTimesOneYearD36 = BigInt(0).toString();
+        rateBracket.updatedAt = newTime;
+      }
+    }
+
+    rateBracket.totalDebt = rateBracket.totalDebt + newDebt;
+    rateBracket.pendingDebtTimesOneYearD36 =
+      rateBracket.pendingDebtTimesOneYearD36 +
+      BigInt(newTime - rateBracket.updatedAt) * BigInt(rateBracket.sumDebtTimesRateD36);
+    rateBracket.sumDebtTimesRateD36 = rateBracket.sumDebtTimesRateD36 + newDebt * newRate;
+    rateBracket.updatedAt = newTime;
   }
 
-  return rateBracket;
+  if (rateBracket) {
+    await rateBracket.save();
+  }
 }
 
 function floorToDecimals(value: bigint, decimals: number): bigint {
-  const factor = BigInt(10) ** BigInt(18 - decimals);
+  const factor = BigInt(10) ** (BigInt(18) - BigInt(decimals));
   return (value / factor) * factor;
 }
 
@@ -478,46 +196,6 @@ function getRateFloored(rate: bigint): bigint {
   return floorToDecimals(rate, 3);
 }
 
-// When a trove enters a batch:
-//  1. set the interest batch on the trove
-//  2. set the interest rate to 0 (indicating that the trove is in a batch)
-//  3. remove its debt from its rate bracket (handled at the batch level)
-async function enterBatch(
-  collId: string,
-  troveId: bigint,
-  timestamp: number,
-  batchManager: string,
-  indexerName: string
-): Promise<Trove> {
-  const troveFullId = `${collId}:${toHexAddress(troveId)}`;
-  const batchId = `${collId}:${batchManager}`;
-
-  const trove = await Trove.loadEntity(troveFullId, indexerName);
-  if (trove === null) {
-    throw new Error(`Trove not found: ${troveFullId}`);
-  }
-
-  await updateRateBracketDebt(
-    collId,
-    BigInt(trove.interestRate),
-    BigInt(0), // moving rate to 0 (in batch)
-    BigInt(trove.debt),
-    BigInt(0), // debt is 0 too (handled at the batch level)
-    indexerName
-  );
-
-  trove.interestBatch = batchId;
-  trove.interestRate = BigInt(0).toString();
-  trove.updatedAt = timestamp;
-  await trove.save();
-
-  return trove;
-}
-
-// when a batch gets updated:
-//  1. if needed, remove the debt from the previous rate bracket
-//  2. update the total debt on the current rate bracket
-//  3. update the batch, creating it if needed
 export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
   return async ({ block, event, rawEvent }) => {
     if (!block || !event) return;
@@ -529,37 +207,141 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
       await TroveManagerEventsEmitter.loadEntity(troveManagerEventsEmitterAddress, indexerName)
     ).collId;
 
-    const batchId = `${collId}:${event.interest_batch_manager}`;
+    const batchId = `${collId}:${toHexAddress(event.interest_batch_manager)}`;
     let batch = await InterestBatch.loadEntity(batchId, indexerName);
-
-    const prevRate = batch ? batch.annualInterestRate : null;
-    const newRate = event.annual_interest_rate;
-
-    const prevDebt = batch ? batch.debt : BigInt(0);
-    const newDebt = event.debt;
-
-    await updateRateBracketDebt(
-      collId,
-      BigInt(prevRate),
-      BigInt(newRate),
-      BigInt(prevDebt),
-      BigInt(newDebt),
-      indexerName
-    );
-
-    // update batch
     if (!batch) {
       batch = new InterestBatch(batchId, indexerName);
       batch.collateral = collId;
-      batch.batchManager = event.interest_batch_manager;
+      batch.batchManager = event.params._interestBatchManager;
+      batch.annualInterestRate = BigInt(0).toString();
+      batch.debt = BigInt(0).toString();
+      batch.updatedAt = event.block.timestamp;
     }
 
-    batch.collateral = collId;
-    batch.batchManager = event.interest_batch_manager;
-    batch.debt = newDebt;
-    batch.coll = event.coll;
-    batch.annualInterestRate = event.annual_interest_rate;
-    batch.annualManagementFee = event.annual_management_fee;
+    await updateRateBracketDebt(
+      collId,
+      BigInt(batch.annualInterestRate),
+      BigInt(event.annual_interest_rate),
+      BigInt(batch.debt),
+      BigInt(event.debt),
+      indexerName,
+      batch.updatedAt,
+      block.timestamp
+    );
+
+    batch.debt = BigInt(event.debt).toString();
+    batch.coll = BigInt(event.coll).toString();
+    batch.annualInterestRate = BigInt(event.annual_interest_rate).toString();
+    batch.annualManagementFee = BigInt(event.annual_management_fee).toString();
+    batch.updatedAt = block.timestamp;
     await batch.save();
+  };
+}
+
+export function createTrove(troveId: string, indexerName: string): Trove {
+  const trove = new Trove(troveId, indexerName);
+  trove.borrower = toHexAddress(0);
+  trove.createdAt = 0;
+  trove.debt = BigInt(0).toString();
+  trove.deposit = BigInt(0).toString();
+  trove.stake = BigInt(0).toString();
+  trove.status = 'active';
+  trove.troveId = troveId;
+  trove.updatedAt = 0;
+  trove.lastUserActionAt = 0;
+  trove.previousOwner = toHexAddress(0);
+  trove.redemptionCount = 0;
+  trove.redeemedColl = BigInt(0).toString();
+  trove.redeemedDebt = BigInt(0).toString();
+  trove.interestRate = BigInt(0).toString();
+  trove.interestBatch = null;
+  trove.mightBeLeveraged = false;
+
+  // Don't save here - let the calling handler save after updating all fields
+  return trove;
+}
+
+export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
+  return async ({ block, event, rawEvent }) => {
+    if (!block || !event) return;
+
+    const indexerName = ctx.indexerName;
+
+    const troveManagerEventsEmitterAddress = toHexAddress(rawEvent.from_address);
+    const collId = (
+      await TroveManagerEventsEmitter.loadEntity(troveManagerEventsEmitterAddress, indexerName)
+    ).collId;
+
+    const troveId = `${collId}:${event.trove_id}`;
+    console.log(`Loading trove: ${troveId}`);
+    let trove = await Trove.loadEntity(troveId, indexerName);
+    if (!trove) {
+      trove = createTrove(troveId, indexerName);
+    }
+
+    await updateRateBracketDebt(
+      collId,
+      BigInt(trove.interestRate),
+      BigInt(event.annual_interest_rate),
+      BigInt(trove.debt),
+      BigInt(event.debt),
+      indexerName,
+      trove.updatedAt,
+      block.timestamp
+    );
+
+    trove.debt = BigInt(event.debt).toString();
+    trove.deposit = BigInt(event.coll).toString();
+    trove.stake = BigInt(event.stake).toString();
+    trove.interestRate = BigInt(event.annual_interest_rate).toString();
+    trove.interestBatch = null;
+    trove.updatedAt = block.timestamp;
+    await trove.save();
+  };
+}
+
+export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer {
+  return async ({ block, event, rawEvent }) => {
+    if (!block || !event) return;
+
+    const indexerName = ctx.indexerName;
+
+    const troveManagerEventsEmitterAddress = toHexAddress(rawEvent.from_address);
+    const collId = (
+      await TroveManagerEventsEmitter.loadEntity(troveManagerEventsEmitterAddress, indexerName)
+    ).collId;
+
+    const troveId = `${collId}:${event.trove_id}`;
+    const trove = await Trove.loadEntity(troveId, indexerName);
+
+    if (!trove) {
+      throw new Error(`Trove not found: ${troveId}`);
+    }
+
+    await updateRateBracketDebt(
+      collId,
+      BigInt(trove.interestRate),
+      0n,
+      BigInt(trove.debt),
+      0n, // batched debt handled at batch level
+      indexerName,
+      trove.updatedAt,
+      block.timestamp
+    );
+
+    if (event.total_debt_shares !== 0) {
+      trove.debt = (
+        (BigInt(event.debt) * BigInt(event.batch_debt_shares)) /
+        BigInt(event.total_debt_shares)
+      ).toString();
+    } else {
+      trove.debt = 0n.toString();
+    }
+    trove.deposit = BigInt(event.coll).toString();
+    trove.stake = BigInt(event.stake).toString();
+    trove.interestRate = 0n.toString();
+    trove.interestBatch = `${collId}:${toHexAddress(event.interest_batch_manager)}`;
+    trove.updatedAt = block.timestamp;
+    await trove.save();
   };
 }
