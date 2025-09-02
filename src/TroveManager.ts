@@ -136,7 +136,7 @@ async function updateRateBracketDebt(
     rateBracket.totalDebt = (BigInt(rateBracket.totalDebt) - prevDebt).toString();
     // Break down the computation into meaningful parts
     const currentBracketInterestAccrual =
-      (BigInt(newTime) + BigInt(rateBracket.updatedAt)) * BigInt(rateBracket.sumDebtTimesRateD36);
+      (BigInt(newTime) - BigInt(rateBracket.updatedAt)) * BigInt(rateBracket.sumDebtTimesRateD36);
     const previousBracketInterestAccrual =
       (BigInt(newTime) - BigInt(prevTime)) * prevDebt * prevRate;
 
@@ -174,11 +174,15 @@ async function updateRateBracketDebt(
       }
     }
 
-    rateBracket.totalDebt = rateBracket.totalDebt + newDebt;
-    rateBracket.pendingDebtTimesOneYearD36 =
-      rateBracket.pendingDebtTimesOneYearD36 +
-      BigInt(newTime - rateBracket.updatedAt) * BigInt(rateBracket.sumDebtTimesRateD36);
-    rateBracket.sumDebtTimesRateD36 = rateBracket.sumDebtTimesRateD36 + newDebt * newRate;
+    rateBracket.totalDebt = (BigInt(rateBracket.totalDebt) + newDebt).toString();
+    rateBracket.pendingDebtTimesOneYearD36 = (
+      BigInt(rateBracket.pendingDebtTimesOneYearD36) +
+      BigInt(newTime - rateBracket.updatedAt) * BigInt(rateBracket.sumDebtTimesRateD36)
+    ).toString();
+    rateBracket.sumDebtTimesRateD36 = (
+      BigInt(rateBracket.sumDebtTimesRateD36) +
+      newDebt * newRate
+    ).toString();
     rateBracket.updatedAt = newTime;
   }
 
@@ -273,7 +277,6 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
     ).collId;
 
     const troveId = `${collId}:${event.trove_id}`;
-    console.log(`Loading trove: ${troveId}`);
     let trove = await Trove.loadEntity(troveId, indexerName);
     if (!trove) {
       trove = createTrove(troveId, indexerName);
