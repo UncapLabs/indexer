@@ -244,6 +244,8 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
 
 export function createTrove(troveId: string, indexerName: string): Trove {
   const trove = new Trove(troveId, indexerName);
+  const collId = troveId.split(':')[0];
+  trove.collateral = collId;
   trove.borrower = toHexAddress(0);
   trove.createdAt = 0;
   trove.debt = BigInt(0).toString();
