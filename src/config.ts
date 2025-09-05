@@ -9,7 +9,7 @@ import USDU from './abis/USDU.json';
 
 const CONFIG = {
   sepolia: {
-    networkNodeUrl: 'https://starknet-sepolia.infura.io/v3/c82b1cf516984b599108487a1b6481c4'
+    networkNodeUrl: process.env.STARKNET_RPC_URL || 'https://starknet-sepolia.infura.io/v3/c82b1cf516984b599108487a1b6481c4'
   }
 };
 
