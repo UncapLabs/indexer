@@ -5,6 +5,20 @@
     "interface_name": "usdu::mocks::YesContract::IYesContract"
   },
   {
+    "type": "enum",
+    "name": "core::bool",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
     "type": "interface",
     "name": "usdu::mocks::YesContract::IYesContract",
     "items": [
@@ -15,6 +29,17 @@
         "outputs": [
           {
             "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "initialized",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::bool"
           }
         ],
         "state_mutability": "view"
