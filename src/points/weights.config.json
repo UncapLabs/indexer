@@ -1,14 +1,14 @@
 {
   "positions": {
-    "0x239ea2fe06841aa7651ae3eba7da15322838e2dbc490aaf3304c4cfe5b50fd6": {
+    "0x3b2236705adcd078a1657415a9a8324a37da72b8aa681f4930166bfbf0f8b18": {
       "weight": 0.000277,
       "type": "stability_pool",
-      "description": "GBTC Stability Pool"
+      "description": "UBTC Stability Pool"
     },
-    "0x93e433139cd2d79faf1ce8000ca68a29d2eb15986887c39e055d266866a1d8": {
+    "0x3743a157e081243a86a01e1ac31f1747becf7e01a660389c8f577f0510acfc4": {
       "weight": 0.0005,
       "type": "stability_pool",
-      "description": "UBTC Stability Pool"
+      "description": "WMWBTC Stability Pool"
     }
   }
 }
