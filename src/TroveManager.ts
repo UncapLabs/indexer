@@ -5,6 +5,7 @@ import { InterestRateBracket, TroveManagerEventsEmitter } from '../.checkpoint/m
 import { Context } from './index';
 import { toHexAddress } from './shared';
 import { CairoCustomEnum } from 'starknet';
+import * as fs from 'fs';
 
 // see Operation enum in contracts
 //
@@ -20,6 +21,8 @@ const OP_OPEN_TROVE_AND_JOIN_BATCH = 'OpenTroveAndJoinBatch';
 // const OP_REMOVE_FROM_BATCH = 'RemoveFromBatch';
 
 const FLASH_LOAN_TOPIC = 'TODO'; // TODO: should be the hash of the flash loan event
+
+const TARGET_TROVE_ID = '0x41b30c3fa9e365379d498939fec476b257285ff9d97edaad27a509dcc03cd1c';
 
 export function createTroveOperationHandler(context: Context): starknet.Writer {
   return async ({ block, event, rawEvent }) => {
@@ -41,11 +44,11 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       throw new Error(`Collateral not found: ${collId}`);
     }
 
-    const troveId = `${collId}:${event.trove_id}`;
-    const trove = await Trove.loadEntity(troveId, indexerName);
+    const id = `${collId}:${event.trove_id}`;
+    const trove = await Trove.loadEntity(id, indexerName);
 
     if (!trove) {
-      throw new Error(`Trove not found: ${troveId}`);
+      throw new Error(`Trove not found: ${id}`);
     }
 
     // Opening
@@ -97,7 +100,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       trove.mightBeLeveraged = inferLeverage(event);
     }
 
-    trove.save();
+    await trove.save();
   };
 }
 
@@ -242,17 +245,17 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
   };
 }
 
-export function createTrove(troveId: string, indexerName: string): Trove {
-  const trove = new Trove(troveId, indexerName);
-  const collId = troveId.split(':')[0];
+export function createTrove(id: string, createdAt: number, indexerName: string): Trove {
+  const trove = new Trove(id, indexerName);
+  const collId = id.split(':')[0];
   trove.collateral = collId;
   trove.borrower = toHexAddress(0);
-  trove.createdAt = 0;
+  trove.createdAt = createdAt;
   trove.debt = BigInt(0).toString();
   trove.deposit = BigInt(0).toString();
   trove.stake = BigInt(0).toString();
   trove.status = 'active';
-  trove.troveId = troveId;
+  trove.troveId = id.split(':')[1];
   trove.updatedAt = 0;
   trove.lastUserActionAt = 0;
   trove.previousOwner = toHexAddress(0);
@@ -278,10 +281,11 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
       await TroveManagerEventsEmitter.loadEntity(troveManagerEventsEmitterAddress, indexerName)
     ).collId;
 
-    const troveId = `${collId}:${event.trove_id}`;
-    let trove = await Trove.loadEntity(troveId, indexerName);
+    const id = `${collId}:${event.trove_id}`;
+    let trove = await Trove.loadEntity(id, indexerName);
+
     if (!trove) {
-      trove = createTrove(troveId, indexerName);
+      trove = createTrove(id, block.timestamp, indexerName);
     }
 
     await updateRateBracketDebt(
@@ -316,11 +320,11 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
       await TroveManagerEventsEmitter.loadEntity(troveManagerEventsEmitterAddress, indexerName)
     ).collId;
 
-    const troveId = `${collId}:${event.trove_id}`;
-    const trove = await Trove.loadEntity(troveId, indexerName);
+    const id = `${collId}:${event.trove_id}`;
+    const trove = await Trove.loadEntity(id, indexerName);
 
     if (!trove) {
-      throw new Error(`Trove not found: ${troveId}`);
+      throw new Error(`Trove not found: ${id}`);
     }
 
     await updateRateBracketDebt(

@@ -23,7 +23,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     sources: [
       {
         contract: '0x4b3b579eb56214f871b5d41c3f0673a4cc964abd2f94ada41d59bdf7ffbc262',
-        start: 2220046,
+        start: 2229948,
         abi: 'USDU',
         events: [
           {
@@ -34,7 +34,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
       },
       {
         contract: '0x3b2236705adcd078a1657415a9a8324a37da72b8aa681f4930166bfbf0f8b18',
-        start: 2220046,
+        start: 2229967,
         abi: 'StabilityPool',
         events: [
           {
@@ -45,7 +45,7 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
       },
       {
         contract: '0x3743a157e081243a86a01e1ac31f1747becf7e01a660389c8f577f0510acfc4',
-        start: 2220046,
+        start: 2230011,
         abi: 'StabilityPool',
         events: [
           {
