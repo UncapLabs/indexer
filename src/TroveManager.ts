@@ -255,7 +255,7 @@ export function createTrove(id: string, createdAt: number, indexerName: string):
   trove.deposit = BigInt(0).toString();
   trove.stake = BigInt(0).toString();
   trove.status = 'active';
-  trove.troveId = id.split(':')[1];
+  trove.troveId = id;
   trove.updatedAt = 0;
   trove.lastUserActionAt = 0;
   trove.previousOwner = toHexAddress(0);
