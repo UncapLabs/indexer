@@ -22,8 +22,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
     fetch_interval: 1000,
     sources: [
       {
-        contract: '0x4b3b579eb56214f871b5d41c3f0673a4cc964abd2f94ada41d59bdf7ffbc262',
-        start: 2229948,
+        contract: '0x4061120aee5424096759c209a6366c6a2f89c50470532c38322f8f78e58f133',
+        start: 2364453,
         abi: 'USDU',
         events: [
           {
@@ -33,8 +33,8 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
         ]
       },
       {
-        contract: '0x3b2236705adcd078a1657415a9a8324a37da72b8aa681f4930166bfbf0f8b18',
-        start: 2229967,
+        contract: '0x2389a210b2053d662716a079f37bb25eee9b7e48bb2a793ea430d5a693aef87',
+        start: 2364469,
         abi: 'StabilityPool',
         events: [
           {
@@ -43,17 +43,6 @@ export function createConfig(indexerName: keyof typeof CONFIG): CheckpointConfig
           }
         ]
       },
-      {
-        contract: '0x3743a157e081243a86a01e1ac31f1747becf7e01a660389c8f577f0510acfc4',
-        start: 2230011,
-        abi: 'StabilityPool',
-        events: [
-          {
-            name: 'DepositOperation',
-            fn: 'handleStabilityPoolOperation'
-          }
-        ]
-      }
     ],
     templates: {
       TroveManagerEventsEmitter: {
