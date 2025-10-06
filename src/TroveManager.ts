@@ -25,7 +25,7 @@ const FLASH_LOAN_TOPIC = 'TODO'; // TODO: should be the hash of the flash loan e
 const TARGET_TROVE_ID = '0x41b30c3fa9e365379d498939fec476b257285ff9d97edaad27a509dcc03cd1c';
 
 export function createTroveOperationHandler(context: Context): starknet.Writer {
-  return async ({ block, event, rawEvent }) => {
+  return async ({ block, event, rawEvent, txId }) => {
     if (!block || !event || !rawEvent) return;
     const operation: string = new CairoCustomEnum(event.operation.variant).activeVariant();
 
@@ -89,6 +89,7 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
     // Liquidation
     if (operation === OP_LIQUIDATE) {
       trove.status = 'liquidated';
+      trove.liquidationTx = txId;
     }
 
     // Infer leverage flag on opening & adjustment
