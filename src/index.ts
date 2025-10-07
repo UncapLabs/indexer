@@ -38,16 +38,6 @@ const dir = __dirname.endsWith('dist/src') ? '../' : '';
 const schemaFile = path.join(__dirname, `${dir}../src/schema.gql`);
 const schema = fs.readFileSync(schemaFile, 'utf8');
 
-// const mainnetConfig = createConfig('mainnet');
-const sepoliaConfig = createConfig('sepolia');
-
-// const mainnetIndexer = new starknet.StarknetIndexer(createStarknetWriters('mainnet'));
-const context = {
-  indexerName: 'sepolia',
-  provider: new RpcProvider({ nodeUrl: 'https://rpc.snapshot.org/sn-sep' })
-};
-const sepoliaIndexer = new starknet.StarknetIndexer(createStarknetWriters(context));
-
 const checkpoint = new Checkpoint(schema, {
   logLevel: LogLevel.Info,
   prettifyLogs: true,
@@ -55,8 +45,26 @@ const checkpoint = new Checkpoint(schema, {
   overridesConfig: overrides
 });
 
-// checkpoint.addIndexer('mainnet', mainnetConfig, mainnetIndexer);
-checkpoint.addIndexer('sepolia', sepoliaConfig, sepoliaIndexer);
+const config = createConfig();
+if (process.env.CHAIN === 'mainnet') {
+  const mainnetContext = {
+    indexerName: 'mainnet',
+    provider: new RpcProvider({ nodeUrl: config.network_node_url })
+  };
+  const mainnetIndexer = new starknet.StarknetIndexer(createStarknetWriters(mainnetContext));
+
+  checkpoint.addIndexer('mainnet', config, mainnetIndexer);
+} else if (process.env.CHAIN === 'sepolia') {
+  const sepoliaContext = {
+    indexerName: 'sepolia',
+    provider: new RpcProvider({ nodeUrl: config.network_node_url })
+  };
+  const sepoliaIndexer = new starknet.StarknetIndexer(createStarknetWriters(sepoliaContext));
+
+  checkpoint.addIndexer('sepolia', config, sepoliaIndexer);
+} else {
+  throw new Error('Invalid chain specified.');
+}
 
 async function run() {
   if (process.env.NODE_ENV === 'production') {
