@@ -220,10 +220,10 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
     if (!batch) {
       batch = new InterestBatch(batchId, indexerName);
       batch.collateral = collId;
-      batch.batchManager = event.params._interestBatchManager;
+      batch.batchManager = event.interest_batch_manager;
       batch.annualInterestRate = BigInt(0).toString();
       batch.debt = BigInt(0).toString();
-      batch.updatedAt = event.block.timestamp;
+      batch.updatedAt = block.timestamp;
     }
 
     await updateRateBracketDebt(
@@ -322,10 +322,10 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
     ).collId;
 
     const id = `${collId}:${event.trove_id}`;
-    const trove = await Trove.loadEntity(id, indexerName);
+    let trove = await Trove.loadEntity(id, indexerName);
 
     if (!trove) {
-      throw new Error(`Trove not found: ${id}`);
+      trove = createTrove(id, block.timestamp, indexerName);
     }
 
     await updateRateBracketDebt(
@@ -339,14 +339,15 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
       block.timestamp
     );
 
-    if (event.total_debt_shares !== 0) {
-      trove.debt = (
-        (BigInt(event.debt) * BigInt(event.batch_debt_shares)) /
-        BigInt(event.total_debt_shares)
-      ).toString();
-    } else {
-      trove.debt = 0n.toString();
-    }
+    // if (event.total_debt_shares !== 0) {
+    //   console.log('event:', event);
+    //   trove.debt = (
+    //     (BigInt(event.debt) * BigInt(event.batch_debt_shares)) /
+    //     BigInt(event.total_debt_shares)
+    //   ).toString();
+    // } else {
+    trove.debt = 0n.toString();
+    // }
     trove.deposit = BigInt(event.coll).toString();
     trove.stake = BigInt(event.stake).toString();
     trove.interestRate = 0n.toString();
