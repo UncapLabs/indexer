@@ -1,5 +1,6 @@
 import { CheckpointConfig } from '@snapshot-labs/checkpoint';
 import TroveManager from './abis/TroveManager.json';
+import BatchManager from './abis/BatchManager.json';
 import CollateralRegistry from './abis/CollateralRegistry.json';
 import BorrowerOperations from './abis/BorrowerOperations.json';
 import StabilityPool from './abis/StabilityPool.json';
@@ -21,17 +22,6 @@ export function createConfig(): CheckpointConfig {
           fn: 'handleCollateralRegistryAddressChanged'
         }
       ]
-    },
-    {
-      contract: '0x5f9b90ea732b6b95a180a83633c27b969bc351df90a1147aa791ff65841784b',
-      start: 2753629,
-      abi: 'StabilityPool',
-      events: [
-        {
-          name: 'DepositOperation',
-          fn: 'handleStabilityPoolOperation'
-        }
-      ]
     }
   ];
 
@@ -44,17 +34,6 @@ export function createConfig(): CheckpointConfig {
         {
           name: 'CollateralRegistryAddressChanged',
           fn: 'handleCollateralRegistryAddressChanged'
-        }
-      ]
-    },
-    {
-      contract: '0x2389a210b2053d662716a079f37bb25eee9b7e48bb2a793ea430d5a693aef87',
-      start: 2364469,
-      abi: 'StabilityPool',
-      events: [
-        {
-          name: 'DepositOperation',
-          fn: 'handleStabilityPoolOperation'
         }
       ]
     }
@@ -95,10 +74,20 @@ export function createConfig(): CheckpointConfig {
             fn: 'handleTransfer'
           }
         ]
+      },
+      BatchManager: {
+        abi: 'BatchManager',
+        events: [
+          {
+            name: 'BatchUpdated',
+            fn: 'handleBatchUpdated'
+          }
+        ]
       }
     },
     abis: {
       BorrowerOperations,
+      BatchManager,
       CollateralRegistry,
       StabilityPool,
       TroveManager,

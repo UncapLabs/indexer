@@ -6,6 +6,7 @@ import AddressesRegistryAbi from './abis/AddressesRegistry.json';
 import { Contract } from 'starknet';
 import { starknet } from '@snapshot-labs/checkpoint';
 import {
+  BatchManager,
   Collateral,
   CollateralAddresses,
   TroveManagerEventsEmitter,
@@ -88,6 +89,7 @@ async function addCollateral(
   addresses.troveNft = toHexAddress(await addressesRegistry.get_trove_nft());
   addresses.liquidationManager = toHexAddress(await addressesRegistry.get_liquidation_manager());
   addresses.redemptionManager = toHexAddress(await addressesRegistry.get_redemption_manager());
+  addresses.batchManager = toHexAddress(await addressesRegistry.get_batch_manager());
 
   const borrowerOperationsContract = new Contract(
     BorrowerOperationsAbi,
@@ -104,8 +106,11 @@ async function addCollateral(
     ctx.indexerName
   );
   troveManager.collId = collId;
-
   await troveManager.save();
+
+  const batchManager = new BatchManager(addresses.batchManager, ctx.indexerName);
+  batchManager.collId = collId;
+  await batchManager.save();
 
   const troveNft = new TroveNFT(addresses.troveNft, ctx.indexerName);
   troveNft.collId = collId;
@@ -118,6 +123,11 @@ async function addCollateral(
 
   await helpers.executeTemplate('TroveNFT', {
     contract: addresses.troveNft,
+    start: block.block_number
+  });
+
+  await helpers.executeTemplate('BatchManager', {
+    contract: addresses.batchManager,
     start: block.block_number
   });
 }

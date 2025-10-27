@@ -1,5 +1,10 @@
 scalar BigDecimalU256
 
+type BatchManager {
+  id: ID! # "BatchManagerAddress"
+  collId: String!
+}
+
 type BorrowerInfo {
   id: ID! # "borrowerAddress", e.g. "0x0000000000000000000000000000000000000000"
   nextOwnerIndexes: [Int!]!
@@ -18,6 +23,7 @@ type Collateral {
 type CollateralAddresses {
   id: ID! # "collIndex", e.g. "0"
   collateral: Collateral!
+  batchManager: String!
   borrowerOperations: String!
   liquidationManager: String!
   redemptionManager: String!
@@ -48,6 +54,7 @@ type InterestBatch {
   annualInterestRate: BigDecimalU256!
   annualManagementFee: BigDecimalU256!
   troves: [Trove!]! @derivedFrom(field: "interestBatch")
+  total_debt_shares: BigDecimalU256!
   updatedAt: Int!
 }
 
@@ -67,6 +74,7 @@ type Trove {
   interestRate: BigDecimalU256!
   stake: BigDecimalU256!
   troveId: String!
+  shares: BigDecimalU256
   previousOwner: String!
   redemptionCount: Int!
   redeemedColl: BigDecimalU256!
@@ -84,55 +92,7 @@ type TroveManagerEventsEmitter {
   collId: String!
 }
 
-
-##### Points System #####
-
-# User aggregate data
-type User {
-  id: ID! # User address
-  totalPoints: BigDecimalU256!
-  totalValue: BigDecimalU256! # Total USD value across all positions
-  totalRate: BigDecimalU256! # Total points per second earning rate
-  lastUpdateTime: Int! # Unix timestamp of last update
-  
-  # Relations to specific positions
-  stabilityPoolPositions: [StabilityPoolPosition!]! @derivedFrom(field: "user")
-  ekuboPositions: [EkuboPosition!]! @derivedFrom(field: "user")
-  vesuPositions: [VesuPosition!]! @derivedFrom(field: "user")
-}
-
-# Stability Pool position
-type StabilityPoolPosition {
-  id: ID! # "userAddress-spAddress"
-  user: User!
-  value: BigDecimalU256! # USD value deposited
-  poolAddress: String! # Stability pool contract address
-  pointsEarned: BigDecimalU256!
-  earningRate: BigDecimalU256! # Points per second
-  stashedColl: BigDecimalU256! # Stashed collateral
-  lastUpdateTime: Int! # Unix timestamp of last update
-}
-
-# Liquidity Pool position (Ekubo)
-type EkuboPosition {
-  id: ID! # "userAddress-poolAddress"
-  user: User!
-  pool: String! # Pool identifier (e.g., "USDU/BTC", "USDU/USDC")
-  poolAddress: String! # Ekubo pool contract address
-  value: BigDecimalU256! # USD value of LP position
-  pointsEarned: BigDecimalU256!
-  earningRate: BigDecimalU256! # Points per second
-  lastUpdateTime: Int! # Unix timestamp of last update
-}
-
-# Money Market position (Vesu)
-type VesuPosition {
-  id: ID! # "userAddress-marketId-positionType"
-  user: User!
-  market: String! # Market identifier
-  positionType: String!
-  value: BigDecimalU256! # USD value (positive for deposits, negative for borrows)
-  pointsEarned: BigDecimalU256!
-  earningRate: BigDecimalU256! # Points per second
-  lastUpdateTime: Int! # Unix timestamp of last update
+type TrovesQueue {
+  id: ID! # "txId"
+  troves: [Trove]
 }

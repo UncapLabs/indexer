@@ -5,7 +5,8 @@ import { InterestRateBracket, TroveManagerEventsEmitter } from '../.checkpoint/m
 import { Context } from './index';
 import { toHexAddress } from './shared';
 import { CairoCustomEnum } from 'starknet';
-import * as fs from 'fs';
+import { TrovesQueue } from '../.checkpoint/models';
+import { BatchManager } from '../.checkpoint/models';
 
 // see Operation enum in contracts
 //
@@ -21,8 +22,6 @@ const OP_OPEN_TROVE_AND_JOIN_BATCH = 'OpenTroveAndJoinBatch';
 // const OP_REMOVE_FROM_BATCH = 'RemoveFromBatch';
 
 const FLASH_LOAN_TOPIC = 'TODO'; // TODO: should be the hash of the flash loan event
-
-const TARGET_TROVE_ID = '0x41b30c3fa9e365379d498939fec476b257285ff9d97edaad27a509dcc03cd1c';
 
 export function createTroveOperationHandler(context: Context): starknet.Writer {
   return async ({ block, event, rawEvent, txId }) => {
@@ -210,10 +209,18 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
 
     const indexerName = ctx.indexerName;
 
-    const troveManagerEventsEmitterAddress = toHexAddress(rawEvent.from_address);
-    const collId = (
-      await TroveManagerEventsEmitter.loadEntity(troveManagerEventsEmitterAddress, indexerName)
-    ).collId;
+    const eventEmitterAddress = toHexAddress(rawEvent.from_address);
+    let eventEmitter = await TroveManagerEventsEmitter.loadEntity(eventEmitterAddress, indexerName);
+
+    if (!eventEmitter) {
+      // Fallback: try to load from BatchManager
+      eventEmitter = await BatchManager.loadEntity(eventEmitterAddress, indexerName);
+    }
+
+    if (!eventEmitter) {
+      throw new Error(`TroveManagerEventsEmitter not found: ${eventEmitterAddress}`);
+    }
+    const collId = eventEmitter.collId;
 
     const batchId = `${collId}:${toHexAddress(event.interest_batch_manager)}`;
     let batch = await InterestBatch.loadEntity(batchId, indexerName);
@@ -242,6 +249,7 @@ export function createBatchUpdatedHandler(ctx: Context): starknet.Writer {
     batch.annualInterestRate = BigInt(event.annual_interest_rate).toString();
     batch.annualManagementFee = BigInt(event.annual_management_fee).toString();
     batch.updatedAt = block.timestamp;
+    batch.total_debt_shares = BigInt(event.total_debt_shares).toString();
     await batch.save();
   };
 }
@@ -339,15 +347,27 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
       block.timestamp
     );
 
-    // if (event.total_debt_shares !== 0) {
-    //   console.log('event:', event);
-    //   trove.debt = (
-    //     (BigInt(event.debt) * BigInt(event.batch_debt_shares)) /
-    //     BigInt(event.total_debt_shares)
-    //   ).toString();
-    // } else {
-    trove.debt = 0n.toString();
-    // }
+    const batchManagerAddress = toHexAddress(event.interest_batch_manager);
+    const batchId = `${collId}:${batchManagerAddress}`;
+    const batch = await InterestBatch.loadEntity(batchId, indexerName);
+    if (!batch) {
+      throw new Error(`InterestBatch not found: ${batchId}`);
+    }
+
+    const batchShares = BigInt(batch.total_debt_shares);
+    const batchDebt = BigInt(batch.debt);
+    const troveShares = BigInt(event.batch_debt_shares);
+
+    console.log(
+      `Batch Updated Handler: batchDebt=${batchDebt}, batchShares=${batchShares}, troveShares=${troveShares}`
+    );
+    let troveDebt = 0n;
+    if (batchShares !== 0n) {
+      troveDebt = (batchDebt * troveShares) / batchShares;
+    }
+
+    trove.debt = troveDebt.toString();
+    trove.shares = BigInt(event.batch_debt_shares).toString();
     trove.deposit = BigInt(event.coll).toString();
     trove.stake = BigInt(event.stake).toString();
     trove.interestRate = 0n.toString();
