@@ -91,8 +91,3 @@ type TroveManagerEventsEmitter {
   id: ID! # "TroveManagerEventsEmitterAddress"
   collId: String!
 }
-
-type TrovesQueue {
-  id: ID! # "txId"
-  troves: [Trove]
-}

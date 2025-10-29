@@ -5,8 +5,8 @@ import { InterestRateBracket, TroveManagerEventsEmitter } from '../.checkpoint/m
 import { Context } from './index';
 import { toHexAddress } from './shared';
 import { CairoCustomEnum } from 'starknet';
-import { TrovesQueue } from '../.checkpoint/models';
 import { BatchManager } from '../.checkpoint/models';
+import { logToTelegram } from './telegram';
 
 // see Operation enum in contracts
 //
@@ -292,9 +292,11 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
 
     const id = `${collId}:${event.trove_id}`;
     let trove = await Trove.loadEntity(id, indexerName);
+    let created = false;
 
     if (!trove) {
       trove = createTrove(id, block.timestamp, indexerName);
+      created = true;
     }
 
     await updateRateBracketDebt(
@@ -314,6 +316,8 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
     trove.interestRate = BigInt(event.annual_interest_rate).toString();
     trove.interestBatch = null;
     trove.updatedAt = block.timestamp;
+
+    await logToTelegram(created, trove, collId, block.block_number);
     await trove.save();
   };
 }
