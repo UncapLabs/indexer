@@ -243,10 +243,10 @@
     "@noble/curves" "~1.2.0"
     "@noble/hashes" "~1.3.2"
 
-"@snapshot-labs/checkpoint@0.1.0-beta.67":
-  version "0.1.0-beta.67"
-  resolved "https://registry.yarnpkg.com/@snapshot-labs/checkpoint/-/checkpoint-0.1.0-beta.67.tgz#f8a8264bac3a5aa4e9aec2b166e29f29c690af74"
-  integrity sha512-T4Ph/twyJC77MzBBxKwjxH/SvYEYmses+iZtt1dxt5dmI2yzv4+Nk/7UUO/SjlBJNeWsK/Nu7en4FyuOca50Yg==
+"@snapshot-labs/checkpoint@0.1.0-beta.66":
+  version "0.1.0-beta.66"
+  resolved "https://registry.yarnpkg.com/@snapshot-labs/checkpoint/-/checkpoint-0.1.0-beta.66.tgz#c09568fa27b1dc5b3b5444eb881d522f877cfeb1"
+  integrity sha512-OKgmq/5TxRnpxWjxBrkRp1lCrXLf5Y+ccetSLhruFS98TlDf7voBs+E8zvyorj5BZi1elQa55y9xiy7aFtKu/Q==
   dependencies:
     "@graphql-tools/schema" "^8.5.1"
     "@starknet-io/types-js" "^0.7.10"
