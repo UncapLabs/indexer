@@ -1,5 +1,7 @@
 import { Trove } from '../.checkpoint/models';
 
+const START_BLOCK = '3245544';
+
 const COLLATERAL_MAPPING: Record<string, string> = {
   '0': 'WBTC',
   '1': 'xWBTC'
@@ -74,7 +76,7 @@ export async function logToTelegram(
   }
 
   // Skip if START_BLOCK is set and current block is below it
-  const startBlock = process.env.START_BLOCK;
+  const startBlock = process.env.START_BLOCK || START_BLOCK;
   if (startBlock) {
     const startBlockNum = parseInt(startBlock, 10);
     if (blockNumber < startBlockNum) {
