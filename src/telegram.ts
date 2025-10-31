@@ -63,10 +63,18 @@ async function getWBTCPrice(): Promise<number | null> {
 
 export async function logToTelegram(
   created: boolean,
+  batched: boolean,
   trove: Trove,
   collId: string,
   blockNumber: number
 ): Promise<void> {
+  // Only send notifications on mainnet
+  const chain = process.env.chain;
+  if (chain !== 'mainnet') {
+    console.log(`Skipping Telegram notification: chain is ${chain}, not mainnet`);
+    return;
+  }
+
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -106,25 +114,39 @@ export async function logToTelegram(
       }
     }
 
-    // Determine title based on debt and created status
+    // Determine title based on criteria:
+    // - If created=true, it's a Position Created
+    // - If debt=0, it's a Position Closed
+    // - Otherwise, it's a Position Updated
     let title: string;
-    if (Number(debt) === 0) {
-      title = '🔒 Trove Closed';
-    } else if (created) {
-      title = '🆕 Trove Created';
+    if (created) {
+      title = '🆕 Position Created';
+    } else if (Number(debt) === 0) {
+      title = '🔒 Position Closed';
     } else {
-      title = '🔄 Trove Updated';
+      title = '🔄 Position Updated';
     }
 
-    const message = `━━━━━━━━━━━━━━━━━━━━
-${title}
+    // Build message with borrower and optional batch info
+    const messageLines = [
+      '━━━━━━━━━━━━━━━━━━━━',
+      title,
+      '',
+      `👤 Borrower: ${trove.borrower}`,
+      `💎 Collateral: ${collateralName}`,
+      `📊 Interest Rate: ${interestRate}%`,
+      `💰 Debt: ${debt}`,
+      `🔒 Deposit: ${depositInfo}`
+    ];
 
-📋 Trove ID: ${trove.troveId}
-💎 Collateral: ${collateralName}
-📊 Interest Rate: ${interestRate}%
-💰 Debt: ${debt}
-🔒 Deposit: ${depositInfo}
-━━━━━━━━━━━━━━━━━━━━`;
+    // Add batch address if trove is part of a batch
+    if (trove.interestBatch) {
+      const batchAddress = trove.interestBatch.split(':')[1]; // Extract address from batch ID
+      messageLines.push(`🎯 Batch: ${batchAddress}`);
+    }
+
+    messageLines.push('━━━━━━━━━━━━━━━━━━━━');
+    const message = messageLines.join('\n');
 
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
@@ -143,7 +165,7 @@ ${title}
       const errorData = await response.text();
       console.error('Failed to send Telegram notification:', errorData);
     } else {
-      console.log(`Telegram notification sent for trove ${trove.troveId}`);
+      console.log(`Telegram notification sent for borrower ${trove.borrower}`);
     }
   } catch (error) {
     console.error('Error sending Telegram notification:', error);
