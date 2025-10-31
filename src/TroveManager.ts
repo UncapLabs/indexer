@@ -317,7 +317,10 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
     trove.interestBatch = null;
     trove.updatedAt = block.timestamp;
 
-    await logToTelegram(created, trove, collId, block.block_number);
+    // Send Telegram notification
+    // Pass created flag and batched=false for regular TroveUpdated events
+    await logToTelegram(created, false, trove, collId, block.block_number);
+
     await trove.save();
   };
 }
@@ -335,9 +338,11 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
 
     const id = `${collId}:${event.trove_id}`;
     let trove = await Trove.loadEntity(id, indexerName);
+    let created = false;
 
     if (!trove) {
       trove = createTrove(id, block.timestamp, indexerName);
+      created = true;
     }
 
     await updateRateBracketDebt(
@@ -377,6 +382,11 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
     trove.interestRate = 0n.toString();
     trove.interestBatch = `${collId}:${toHexAddress(event.interest_batch_manager)}`;
     trove.updatedAt = block.timestamp;
+
+    // Send Telegram notification
+    // Pass created flag and batched=true for BatchedTroveUpdated events
+    await logToTelegram(created, true, trove, collId, block.block_number);
+
     await trove.save();
   };
 }
