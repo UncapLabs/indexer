@@ -72,8 +72,8 @@ async function run() {
     await sleep(PRODUCTION_INDEXER_DELAY);
   }
   // No need to reset
-  // await checkpoint.resetMetadata();
-  // await checkpoint.reset();
+  await checkpoint.resetMetadata();
+  await checkpoint.reset();
   await checkpoint.start();
 }
 run();
