@@ -8,38 +8,45 @@ import TroveManagerEventsEmitter from './abis/TroveManagerEventsEmitter.json';
 import TroveNFT from './abis/TroveNFT.json';
 import USDU from './abis/USDU.json';
 
-export function createConfig(): CheckpointConfig {
-  const networkNodeUrl = process.env.STARKNET_RPC_URL;
+export function createConfig(chain: string): CheckpointConfig {
+  const networkNodeUrl =
+    chain === 'mainnet'
+      ? process.env.STARKNET_RPC_URL_MAINNET
+      : process.env.STARKNET_RPC_URL_SEPOLIA;
 
-  const mainnetSources = {
-    contract: '0x02f94539f80158f9a48a7acf3747718dfbec9b6f639e2742c1fb44ae7ab5aa04',
-    start: 2753629,
-    abi: 'USDU',
-    events: [
-      {
-        name: 'CollateralRegistryAddressChanged',
-        fn: 'handleCollateralRegistryAddressChanged'
-      }
-    ]
-  };
+  const mainnetSources = [
+    {
+      contract: '0x02f94539f80158f9a48a7acf3747718dfbec9b6f639e2742c1fb44ae7ab5aa04',
+      start: 2753629,
+      abi: 'USDU',
+      events: [
+        {
+          name: 'CollateralRegistryAddressChanged',
+          fn: 'handleCollateralRegistryAddressChanged'
+        }
+      ]
+    }
+  ];
 
-  const sepoliaSources = {
-    contract: '0x4061120aee5424096759c209a6366c6a2f89c50470532c38322f8f78e58f133',
-    start: 2364453,
-    abi: 'USDU',
-    events: [
-      {
-        name: 'CollateralRegistryAddressChanged',
-        fn: 'handleCollateralRegistryAddressChanged'
-      }
-    ]
-  };
+  const sepoliaSources = [
+    {
+      contract: '0x4061120aee5424096759c209a6366c6a2f89c50470532c38322f8f78e58f133',
+      start: 2364453,
+      abi: 'USDU',
+      events: [
+        {
+          name: 'CollateralRegistryAddressChanged',
+          fn: 'handleCollateralRegistryAddressChanged'
+        }
+      ]
+    }
+  ];
 
   return {
     network_node_url: networkNodeUrl,
     optimistic_indexing: false,
     fetch_interval: 2000,
-    sources: [mainnetSources, sepoliaSources],
+    sources: chain === 'mainnet' ? mainnetSources : sepoliaSources,
     templates: {
       TroveManagerEventsEmitter: {
         abi: 'TroveManagerEventsEmitter',

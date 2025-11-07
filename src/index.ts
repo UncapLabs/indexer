@@ -45,22 +45,21 @@ const checkpoint = new Checkpoint(schema, {
   overridesConfig: overrides
 });
 
-const config = createConfig();
+const mainnetConfig = createConfig('mainnet');
 const mainnetContext = {
   indexerName: 'mainnet',
-  provider: new RpcProvider({ nodeUrl: config.network_node_url })
+  provider: new RpcProvider({ nodeUrl: mainnetConfig.network_node_url })
 };
 const mainnetIndexer = new starknet.StarknetIndexer(createStarknetWriters(mainnetContext));
+checkpoint.addIndexer('mainnet', mainnetConfig, mainnetIndexer);
 
-checkpoint.addIndexer('mainnet', config, mainnetIndexer);
-
+const sepoliaConfig = createConfig('sepolia');
 const sepoliaContext = {
   indexerName: 'sepolia',
-  provider: new RpcProvider({ nodeUrl: config.network_node_url })
+  provider: new RpcProvider({ nodeUrl: sepoliaConfig.network_node_url })
 };
 const sepoliaIndexer = new starknet.StarknetIndexer(createStarknetWriters(sepoliaContext));
-
-checkpoint.addIndexer('sepolia', config, sepoliaIndexer);
+checkpoint.addIndexer('sepolia', sepoliaConfig, sepoliaIndexer);
 
 async function run() {
   if (process.env.NODE_ENV === 'production') {
