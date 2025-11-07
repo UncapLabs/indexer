@@ -69,7 +69,7 @@ export async function logToTelegram(
   blockNumber: number
 ): Promise<void> {
   // Only send notifications on mainnet
-  const chain = process.env.chain;
+  const chain = process.env.CHAIN;
   if (chain !== 'mainnet') {
     console.log(`Skipping Telegram notification: chain is ${chain}, not mainnet`);
     return;

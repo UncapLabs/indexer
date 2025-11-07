@@ -46,25 +46,21 @@ const checkpoint = new Checkpoint(schema, {
 });
 
 const config = createConfig();
-if (process.env.CHAIN === 'mainnet') {
-  const mainnetContext = {
-    indexerName: 'mainnet',
-    provider: new RpcProvider({ nodeUrl: config.network_node_url })
-  };
-  const mainnetIndexer = new starknet.StarknetIndexer(createStarknetWriters(mainnetContext));
+const mainnetContext = {
+  indexerName: 'mainnet',
+  provider: new RpcProvider({ nodeUrl: config.network_node_url })
+};
+const mainnetIndexer = new starknet.StarknetIndexer(createStarknetWriters(mainnetContext));
 
-  checkpoint.addIndexer('mainnet', config, mainnetIndexer);
-} else if (process.env.CHAIN === 'sepolia') {
-  const sepoliaContext = {
-    indexerName: 'sepolia',
-    provider: new RpcProvider({ nodeUrl: config.network_node_url })
-  };
-  const sepoliaIndexer = new starknet.StarknetIndexer(createStarknetWriters(sepoliaContext));
+checkpoint.addIndexer('mainnet', config, mainnetIndexer);
 
-  checkpoint.addIndexer('sepolia', config, sepoliaIndexer);
-} else {
-  throw new Error('Invalid chain specified.');
-}
+const sepoliaContext = {
+  indexerName: 'sepolia',
+  provider: new RpcProvider({ nodeUrl: config.network_node_url })
+};
+const sepoliaIndexer = new starknet.StarknetIndexer(createStarknetWriters(sepoliaContext));
+
+checkpoint.addIndexer('sepolia', config, sepoliaIndexer);
 
 async function run() {
   if (process.env.NODE_ENV === 'production') {
