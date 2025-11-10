@@ -16,39 +16,38 @@ import { Instance } from '@snapshot-labs/checkpoint';
 import { FullBlock } from '@snapshot-labs/checkpoint/dist/src/providers/starknet';
 import { toHexAddress } from './shared';
 
-const ZERO_ADDRESS = toHexAddress('0');
-
-export function createCollateralRegistryAddressChangedHandler(ctx: Context): starknet.Writer {
+export function createNewBranchHandler(ctx: Context): starknet.Writer {
   return async ({ block, event, helpers }) => {
-    const registry = new Contract(
-      CollateralRegistryAbi,
-      event.new_collateral_registry,
+    // TroveManagerAddressAdded new_trove_manager
+    const troveManagerAddress = toHexAddress(event.new_trove_manager);
+    const tm = new Contract(TroveManagerAbi, troveManagerAddress, ctx.provider);
+    const addressesRegistry = toHexAddress(await tm.get_addresses_registry());
+    const addressesRegistryContract = new Contract(
+      AddressesRegistryAbi,
+      addressesRegistry,
       ctx.provider
     );
-    const totalCollaterals: number = await registry.get_num_collaterals();
+    const collRegistryAddress = toHexAddress(
+      await addressesRegistryContract.get_collateral_registry()
+    );
+    const collRegistry = new Contract(CollateralRegistryAbi, collRegistryAddress, ctx.provider);
+    const totalCollaterals = await collRegistry.get_num_collaterals();
 
-    for (let index = 0; index < totalCollaterals; index++) {
-      const token = toHexAddress(await registry.get_collateral(index));
-      const troveManagerAddress = toHexAddress(await registry.get_trove_manager(index));
-
-      if (token === ZERO_ADDRESS || troveManagerAddress === ZERO_ADDRESS) {
+    // iterate through indexes to find the newly added collateral
+    let index = null;
+    for (let i = 0; i <= Number(totalCollaterals); i++) {
+      const coll = await Collateral.loadEntity(i.toString(), ctx.indexerName);
+      if (!coll) {
+        index = i;
         break;
       }
-
-      // we use the token address as the id for the collateral
-      const coll = await Collateral.loadEntity(index.toString(), ctx.indexerName);
-      if (!coll) {
-        await addCollateral(
-          helpers,
-          block,
-          index,
-          totalCollaterals,
-          token,
-          troveManagerAddress,
-          ctx
-        );
-      }
     }
+    if (index === null) {
+      throw new Error('Could not find new collateral index');
+    }
+
+    const token = toHexAddress(await addressesRegistryContract.get_coll_token());
+    await addCollateral(helpers, block, index, token, troveManagerAddress, ctx);
   };
 }
 
@@ -56,7 +55,6 @@ async function addCollateral(
   helpers: ReturnType<Instance['getWriterHelpers']>,
   block: FullBlock,
   collIndex: number,
-  totalCollaterals: number,
   tokenAddress: string,
   troveManagerAddress: string,
   ctx: Context

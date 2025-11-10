@@ -21,8 +21,8 @@ export function createConfig(chain: string): CheckpointConfig {
       abi: 'USDU',
       events: [
         {
-          name: 'CollateralRegistryAddressChanged',
-          fn: 'handleCollateralRegistryAddressChanged'
+          name: 'TroveManagerAddressAdded',
+          fn: 'handleNewBranch'
         }
       ]
     }
@@ -30,13 +30,13 @@ export function createConfig(chain: string): CheckpointConfig {
 
   const sepoliaSources = [
     {
-      contract: '0x4061120aee5424096759c209a6366c6a2f89c50470532c38322f8f78e58f133',
-      start: 2364453,
+      contract: '0x2f05a7b79478c064d338af2706e19ddbbbd77c102ba46cb293f4e2f9dccf751',
+      start: 2840776,
       abi: 'USDU',
       events: [
         {
-          name: 'CollateralRegistryAddressChanged',
-          fn: 'handleCollateralRegistryAddressChanged'
+          name: 'TroveManagerAddressAdded',
+          fn: 'handleNewBranch'
         }
       ]
     }
