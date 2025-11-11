@@ -30,8 +30,8 @@ export function createConfig(chain: string): CheckpointConfig {
 
   const sepoliaSources = [
     {
-      contract: '0x2f05a7b79478c064d338af2706e19ddbbbd77c102ba46cb293f4e2f9dccf751',
-      start: 2840776,
+      contract: '0xc2f7f9fbd5ae626562267eaf3fd119dcf4caafebaaf003e67e5253ad48676b',
+      start: 2851626,
       abi: 'USDU',
       events: [
         {
