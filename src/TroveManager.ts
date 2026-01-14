@@ -6,7 +6,7 @@ import { Context } from './index';
 import { toHexAddress } from './shared';
 import { CairoCustomEnum } from 'starknet';
 import { BatchManager } from '../.checkpoint/models';
-import { logToTelegram } from './telegram';
+import { logToTelegram, logAlertToTelegram, AlertEventData } from './telegram';
 
 // see Operation enum in contracts
 //
@@ -83,12 +83,62 @@ export function createTroveOperationHandler(context: Context): starknet.Writer {
       trove.redeemedDebt = (
         BigInt(trove.redeemedDebt) + BigInt(event.debt_change_from_operation.abs)
       ).toString();
+
+      // Fetch tx to get redeemer address
+      let sender = 'unknown';
+      try {
+        const tx = await context.provider.getTransaction(txId);
+        sender = toHexAddress((tx as { sender_address?: string }).sender_address || 0);
+      } catch (e) {
+        console.error('Failed to fetch tx for redeemer address:', e);
+      }
+
+      const eventData: AlertEventData = {
+        txId,
+        blockTimestamp: timestamp,
+        debtChange: BigInt(event.debt_change_from_operation.abs),
+        collChange: BigInt(event.coll_change_from_operation.abs),
+        sender
+      };
+      await logAlertToTelegram(
+        'redemption',
+        trove,
+        collId,
+        block.block_number,
+        eventData,
+        indexerName
+      );
     }
 
     // Liquidation
     if (operation === OP_LIQUIDATE) {
       trove.status = 'liquidated';
       trove.liquidationTx = txId;
+
+      // Fetch tx to get liquidator address
+      let sender = 'unknown';
+      try {
+        const tx = await context.provider.getTransaction(txId);
+        sender = toHexAddress((tx as { sender_address?: string }).sender_address || 0);
+      } catch (e) {
+        console.error('Failed to fetch tx for liquidator address:', e);
+      }
+
+      const eventData: AlertEventData = {
+        txId,
+        blockTimestamp: timestamp,
+        debtChange: BigInt(event.debt_change_from_operation.abs),
+        collChange: BigInt(event.coll_change_from_operation.abs),
+        sender
+      };
+      await logAlertToTelegram(
+        'liquidation',
+        trove,
+        collId,
+        block.block_number,
+        eventData,
+        indexerName
+      );
     }
 
     // Infer leverage flag on opening & adjustment
@@ -319,7 +369,15 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
 
     // Send Telegram notification
     // Pass created flag and batched=false for regular TroveUpdated events
-    await logToTelegram(created, false, trove, collId, block.block_number);
+    await logToTelegram(
+      created,
+      false,
+      trove,
+      collId,
+      block.block_number,
+      block.timestamp,
+      indexerName
+    );
 
     await trove.save();
   };
@@ -385,7 +443,15 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
 
     // Send Telegram notification
     // Pass created flag and batched=true for BatchedTroveUpdated events
-    await logToTelegram(created, true, trove, collId, block.block_number);
+    await logToTelegram(
+      created,
+      true,
+      trove,
+      collId,
+      block.block_number,
+      block.timestamp,
+      indexerName
+    );
 
     await trove.save();
   };
