@@ -330,7 +330,7 @@ export function createTrove(id: string, createdAt: number, indexerName: string):
 }
 
 export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
-  return async ({ block, event, rawEvent }) => {
+  return async ({ block, event, rawEvent, txId }) => {
     if (!block || !event) return;
 
     const indexerName = ctx.indexerName;
@@ -376,7 +376,8 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
       collId,
       block.block_number,
       block.timestamp,
-      indexerName
+      indexerName,
+      txId
     );
 
     await trove.save();
@@ -384,7 +385,7 @@ export function createTroveUpdatedHandler(ctx: Context): starknet.Writer {
 }
 
 export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer {
-  return async ({ block, event, rawEvent }) => {
+  return async ({ block, event, rawEvent, txId }) => {
     if (!block || !event) return;
 
     const indexerName = ctx.indexerName;
@@ -450,7 +451,8 @@ export function createBatchedTroveUpdatedHandler(ctx: Context): starknet.Writer 
       collId,
       block.block_number,
       block.timestamp,
-      indexerName
+      indexerName,
+      txId
     );
 
     await trove.save();

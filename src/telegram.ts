@@ -75,7 +75,8 @@ export async function logToTelegram(
   collId: string,
   blockNumber: number,
   blockTimestamp: number,
-  indexerName: string
+  indexerName: string,
+  txId: string
 ): Promise<void> {
   // Only send notifications on mainnet
   if (indexerName !== 'mainnet') {
@@ -130,6 +131,10 @@ export async function logToTelegram(
       }
     }
 
+    // Format timestamp as human readable
+    const date = new Date(blockTimestamp * 1000);
+    const timestampStr = date.toISOString().replace('T', ' ').replace('.000Z', ' UTC');
+
     // Determine title based on criteria:
     // - If created=true, it's a Position Created
     // - If debt=0, it's a Position Closed
@@ -148,6 +153,7 @@ export async function logToTelegram(
       '━━━━━━━━━━━━━━━━━━━━',
       title,
       '',
+      `🕐 ${timestampStr}`,
       `👤 Borrower: ${trove.borrower}`,
       `💎 Collateral: ${collateralName}`,
       `📊 Interest Rate: ${interestRate}%`,
@@ -161,6 +167,7 @@ export async function logToTelegram(
       messageLines.push(`🎯 Batch: ${batchAddress}`);
     }
 
+    messageLines.push(`🔗 Tx: https://voyager.online/tx/${txId}`);
     messageLines.push('━━━━━━━━━━━━━━━━━━━━');
     const message = messageLines.join('\n');
 
