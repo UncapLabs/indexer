@@ -66,8 +66,8 @@ async function run() {
     console.log('Delaying indexer to prevent multiple processes indexing at the same time.');
     await sleep(PRODUCTION_INDEXER_DELAY);
   }
-  await checkpoint.resetMetadata();
-  await checkpoint.reset();
+  // await checkpoint.resetMetadata();
+  // await checkpoint.reset();
   await checkpoint.start();
 }
 run();
