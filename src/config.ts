@@ -45,7 +45,7 @@ export function createConfig(chain: string): CheckpointConfig {
   return {
     network_node_url: networkNodeUrl,
     optimistic_indexing: false,
-    fetch_interval: 2000,
+    fetch_interval: 30000,
     sources: chain === 'mainnet' ? mainnetSources : sepoliaSources,
     templates: {
       TroveManagerEventsEmitter: {
